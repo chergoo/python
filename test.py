@@ -177,7 +177,25 @@
 # plt.plot(myline, mymodel(myline))
 # plt.show()
 
+import mysql.connector
+#连接到mysql服务器
+conn = mysql.connector.connect(
+    host="localhost",
+    user="root",
+    password="creesql",
+    database="mysql"
+)
+#创建游标对象
+cursor = conn.cursor()
+#执行查询
+cursor.execute("SELECT * FROM your_table")
+#获取结果
+results = cursor.fetchall()
+#打印结果
+for row in results:
+    print(row)
 
-
-
+#关闭游标和连接
+cursor.close()
+conn.close()
 

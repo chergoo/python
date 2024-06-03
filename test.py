@@ -177,25 +177,52 @@
 # plt.plot(myline, mymodel(myline))
 # plt.show()
 
-import mysql.connector
-#连接到mysql服务器
-conn = mysql.connector.connect(
-    host="localhost",
-    user="root",
-    password="creesql",
-    database="mysql"
-)
-#创建游标对象
-cursor = conn.cursor()
-#执行查询
-cursor.execute("SELECT * FROM your_table")
-#获取结果
-results = cursor.fetchall()
-#打印结果
-for row in results:
-    print(row)
+# import mysql.connector
+# #连接到mysql服务器
+# conn = mysql.connector.connect(
+#     host="localhost",
+#     user="root",
+#     password="creesql",
+#     database="mysql"
+# )
+# #创建游标对象
+# cursor = conn.cursor()
+# #执行查询
+# cursor.execute("SELECT * FROM your_table")
+# #获取结果
+# results = cursor.fetchall()
+# #打印结果
+# for row in results:
+#     print(row)
 
-#关闭游标和连接
-cursor.close()
-conn.close()
+# #关闭游标和连接
+# cursor.close()
+# conn.close()
+
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from matplotlib.animation import FuncAnimation
+
+# fig, ax = plt.subplots()
+# xdata, ydata = [], []
+# ln, = plt.plot([], [], 'r-', animated=True)
+
+# def init():
+#     ax.set_xlim(0, 2*np.pi)
+#     ax.set_ylim(-1, 1)
+#     return ln,
+
+# def update(frame):
+#     xdata.append(frame)
+#     ydata.append(np.sin(frame))
+#     ln.set_data(xdata, ydata)
+#     return ln,
+
+# ani = FuncAnimation(fig, update, frames=np.linspace(0, 2*np.pi, 128),
+#                     init_func=init, blit=True)
+# plt.show()
+import random
+
+cc=random.randint(0,100)
+print(cc)
 

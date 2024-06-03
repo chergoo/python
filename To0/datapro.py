@@ -31,7 +31,7 @@ data = pd.read_csv(file_paths)
 x = data.iloc[0:,0].astype(float) #x为第一列
 #y = data.iloc[1:,1].astype(float) #y为第二列
 
-print(x)
+#print(x)
 # 初始化存储x为0时y值的列表
 y_at_zero_list = []
 
@@ -43,7 +43,7 @@ for col in data.columns[1:]:
     # 提取y轴数据
     y = data[col].astype(float)
 
-    print(y)
+    #print(y)
     
     # 进行最小二乘法拟合
     coefficients = np.polyfit(x, y, 2)

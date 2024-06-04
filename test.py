@@ -221,8 +221,14 @@
 # ani = FuncAnimation(fig, update, frames=np.linspace(0, 2*np.pi, 128),
 #                     init_func=init, blit=True)
 # plt.show()
-import random
+# import random
 
-cc=random.randint(0,100)
-print(cc)
+# cc=random.randint(0,100)
+# print(cc)
+
+import torch
+
+# 检查 GPU 是否可用
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print('Using device:', device)
 

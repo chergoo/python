@@ -22,7 +22,7 @@ def recognize_speech():
 from transformers import pipeline
 #使用 transformers 库和一个预训练的模型来生成回应。这里我们使用 chatbot 模型来进行对话：
 # 加载对话模型
-chatbot = pipeline("conversational", model="microsoft/DialoGPT-medium")
+chatbot = pipeline("table-question-answering", model="microsoft/DialoGPT-medium")
 
 def get_response(text):
     response = chatbot(text)

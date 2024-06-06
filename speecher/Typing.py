@@ -23,12 +23,13 @@ E1.pack()
 
 from transformers import pipeline,AutoModelForCausalLM, AutoTokenizer
 #使用 transformers 库和一个预训练的模型来生成回应。这里我们使用 chatbot 模型来进行对话：
-# 加载对话模型
-# chatbot = pipeline("conversational", model="microsoft/DialoGPT-small")
-# 加载模型和分词器
 model_name = "microsoft/DialoGPT-medium"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name)
+
+# from transformers import AutoTokenizer, AutoModelForMaskedLM
+# tokenizer = AutoTokenizer.from_pretrained("bert-base-chinese")
+# model = AutoModelForMaskedLM.from_pretrained("bert-base-chinese")
 
 
 
@@ -49,6 +50,8 @@ def get_response():
     user_input = E1.get()
     print("human",user_input)
     new_input_ids = tokenizer.encode(user_input + tokenizer.eos_token, return_tensors='pt')
+    # eos_token = "<EOS>"  # 自定义的结束标记
+    # new_input_ids = tokenizer.encode(user_input + eos_token, return_tensors='pt')
 
 # 更新聊天历史
     chat_history_ids = new_input_ids if chat_history_ids is None else torch.cat([chat_history_ids, new_input_ids], dim=-1)

@@ -1,6 +1,6 @@
 import tkinter as tk  # 使用Tkinter前需要先导入
 import torch
-
+import time
 
 # 第1步，实例化object，建立窗口window
 window = tk.Tk()
@@ -76,13 +76,37 @@ def chat():
             print("机器人: " + response)    
 # if __name__ == "__main__":
 #     chat()
-          
+L2 =tk.Label(window,text ="Robot wating")
+L2.pack()
+    
+# def clear():
+#        del L2
+       
+
+# # 绑定键盘事件，例如按下 "c" 键时清空标签
+# window.bind('<c>', clear_label)
+def update_label(txt):
+    L2.config(text=txt)
+
 def helloCallBack():
     print("准备对话")
     chat()
-    L2 =tk.Label(window,text =get_response())
-    L2.pack()
-B = tk.Button(window, text ="Typing", command = helloCallBack)
+    txxt = get_response()
+    txt = "robot : {}".format(txxt)
+    update_label(txt)
+    # L2 =tk.Label(window,text =get_response())
+    # L2.pack()
+    
+def talk():
+    # clear()
+    helloCallBack()  
+
+
+B = tk.Button(window, text ="Typing", command = talk)
+
 B.pack()
+
+# time.sleep(2000)
+# del L2
 
 window.mainloop()

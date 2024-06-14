@@ -1,6 +1,6 @@
 import tkinter as tk  # 使用Tkinter前需要先导入
 import torch
-import time
+# import time
 
 # 第1步，实例化object，建立窗口window
 window = tk.Tk()

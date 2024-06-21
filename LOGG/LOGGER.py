@@ -28,6 +28,17 @@ ax.plot(times, [1]*len(times), marker='o', linestyle='-', color='b')
 # 为每个事件添加标签
 for i, (time, name) in enumerate(zip(times, names)):
     ax.text(time, 1, name, rotation=45, ha='right', va='bottom')
+    ax.text(time, 0.99, time.strftime('%Y-%m-%d'), rotation=0, ha='right', va='bottom')
+
+# 隐藏X轴和Y轴
+ax.xaxis.set_visible(False)
+ax.yaxis.set_visible(False)
+
+# 隐藏图形边框
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['bottom'].set_visible(False)
+ax.spines['left'].set_visible(False)
 
 # 设置日期格式
 # ax.xaxis.set_major_locator(mdates.FixedLocator(times))  # 设置X轴主刻度为数据中的日期

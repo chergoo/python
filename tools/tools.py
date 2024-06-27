@@ -2,8 +2,10 @@
 # encoding: utf-8
 
 import tkinter as tk
-from tkinter import colorchooser,font,messagebox
+from tkinter import colorchooser,font,messagebox,filedialog
 import tkinter.ttk as ttk
+from PIL import Image
+import os
 
 def choose_color():
     # 弹出颜色选择器
@@ -55,6 +57,29 @@ def show_font_list():
     # 绑定双击事件，复制选中的字体名
     font_listbox.bind("<Double-Button-1>", copy_font_name)
 
+def gif_to_jpg_converter():
+    # 创建一个Tkinter根窗口并隐藏它
+    root = tk.Tk()
+    root.withdraw()
+
+    # 弹出文件选择对话框，选择GIF文件
+    gif_path = filedialog.askopenfilename(title="选择一个GIF文件", filetypes=[("GIF files", "*.gif")])
+    print(gif_path)
+    # 如果选择了文件，执行拆解操作
+    if gif_path:
+        output_folder = os.getcwd()  # 使用当前工作目录
+        # 打开GIF图像
+        with Image.open(gif_path) as im:
+            # 遍历每一帧
+            for frame in range(im.n_frames):
+                im.seek(frame)
+                frame_image = im.convert('RGB')  # 将图像转换为RGB模式
+                frame_path = os.path.join(output_folder, f"frame_{frame}.jpg")
+                frame_image.save(frame_path, format="JPEG")
+                print(f"Saved {frame_path}")
+        print(f"所有帧已保存到 {output_folder}")
+    else:
+        print("未选择任何文件")
 
 
 # 创建主窗口
@@ -74,6 +99,10 @@ label_hex.pack(pady=10)
 
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="显示字体列表", command=show_font_list)
+btn_show_font_list.pack(pady=20)
+
+# 添加按钮用于显示字体列表
+btn_show_font_list = tk.Button(root, text="GIF拆解", command=gif_to_jpg_converter)
 btn_show_font_list.pack(pady=20)
 # 运行主循环
 root.mainloop()

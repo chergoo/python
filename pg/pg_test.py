@@ -13,13 +13,19 @@ pygame.display.set_caption('move')
 
 # 加载图片
 image = pygame.image.load('kafuka.jpg')
+
+#获取图片宽高
+width = int(image.get_width() / 2)  #宽减半
+height = int(image.get_height() / 2)    #长减半
+image = pygame.transform.scale(image,(width,height))    #改变图片尺寸
+
 rect = image.get_rect()
 
 # 设置初始速度
 speed = [1, 1]
 
 # 初始背景颜色
-background_color = (0, 0, 0)
+background_color = (255, 255, 255)
 
 # 随机生成颜色的函数
 def random_color():

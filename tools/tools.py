@@ -6,6 +6,7 @@ from tkinter import colorchooser,font,messagebox,filedialog
 import tkinter.ttk as ttk
 from PIL import Image
 import os
+import sys
 
 def choose_color():
     # 弹出颜色选择器
@@ -108,15 +109,25 @@ def create_gif_from_images():
         gif_path,
         save_all=True,
         append_images=images[1:],
-        duration=500,  # 每帧显示时间（毫秒）
+        duration=100,  # 每帧显示时间（毫秒）
         loop=0  # 循环次数，0表示无限循环
     )
     
     print(f"GIF saved at {gif_path}")
+    
 
 # 创建主窗口
 root = tk.Tk()
 root.title("颜色选择器")
+
+# 当窗口关闭时，调用关闭函数
+def on_closing():
+    root.quit()
+    root.destroy()
+    sys.exit()
+
+# 绑定关闭事件
+root.protocol("WM_DELETE_WINDOW", on_closing)
 
 # # 创建按钮框架
 # frame = tk.Frame(root)
@@ -144,6 +155,8 @@ btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="GIF合成", command=create_gif_from_images)
 btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
+
+root.quit()
 
 # 运行主循环
 root.mainloop()

@@ -12,8 +12,8 @@ def choose_color():
     color_code = colorchooser.askcolor(title="选择颜色")
     if color_code:
         rgb, hex_color = color_code
-        label_rgb.config(text=f"RGB: {rgb}")
-        label_hex.config(text=f"16进制: {hex_color}")
+        # label_rgb.config(text=f"RGB: {rgb}")
+        # label_hex.config(text=f"16进制: {hex_color}")
 
 def get_font_list():
     # 获取系统中可用的字体列表
@@ -81,6 +81,38 @@ def gif_to_jpg_converter():
     else:
         print("未选择任何文件")
 
+def create_gif_from_images():
+    root = tk.Tk()
+    root.withdraw()  # 隐藏主窗口
+
+    # 弹出文件选择对话框让用户选择图片
+    filetypes = [("Image files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif")]
+    image_files = filedialog.askopenfilenames(title="Select Images", filetypes=filetypes)
+    
+    if not image_files:
+        print("No images selected")
+        return
+    
+    # 打开所有选中的图片
+    images = [Image.open(img) for img in image_files]
+    
+    # 弹出保存对话框让用户选择保存GIF文件的位置和名称
+    gif_path = filedialog.asksaveasfilename(defaultextension=".gif", filetypes=[("GIF files", "*.gif")])
+    
+    if not gif_path:
+        print("Save cancelled")
+        return
+    
+    # 保存为GIF图
+    images[0].save(
+        gif_path,
+        save_all=True,
+        append_images=images[1:],
+        duration=500,  # 每帧显示时间（毫秒）
+        loop=0  # 循环次数，0表示无限循环
+    )
+    
+    print(f"GIF saved at {gif_path}")
 
 # 创建主窗口
 root = tk.Tk()
@@ -108,5 +140,10 @@ btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20)
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="GIF拆解", command=gif_to_jpg_converter)
 btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
+
+# 添加按钮用于显示字体列表
+btn_show_font_list = tk.Button(root, text="GIF合成", command=create_gif_from_images)
+btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
+
 # 运行主循环
 root.mainloop()

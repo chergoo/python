@@ -86,23 +86,27 @@ def gif_to_jpg_converter():
 root = tk.Tk()
 root.title("颜色选择器")
 
+# # 创建按钮框架
+# frame = tk.Frame(root)
+# frame.pack(padx=10, pady=10)
+
 # 添加按钮用于打开颜色选择器
 btn_choose_color = tk.Button(root, text="选择颜色", command=choose_color)
-btn_choose_color.pack(pady=20)
+btn_choose_color.pack(side=tk.LEFT,padx=10,pady=20) 
 
-# 标签用于显示选择的颜色的RGB和16进制格式
-label_rgb = tk.Label(root, text="RGB: ")
-label_rgb.pack(pady=10)
+# # 标签用于显示选择的颜色的RGB和16进制格式
+# label_rgb = tk.Label(root, text="RGB: ")
+# label_rgb.pack(pady=10)
 
-label_hex = tk.Label(root, text="16进制: ")
-label_hex.pack(pady=10)
+# label_hex = tk.Label(root, text="16进制: ")
+# label_hex.pack(pady=10)
 
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="显示字体列表", command=show_font_list)
-btn_show_font_list.pack(pady=20)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20)
 
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="GIF拆解", command=gif_to_jpg_converter)
-btn_show_font_list.pack(pady=20)
+btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 # 运行主循环
 root.mainloop()

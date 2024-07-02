@@ -7,6 +7,7 @@ import tkinter.ttk as ttk
 from PIL import Image
 import os
 import sys
+import datetime
 
 def choose_color():
     # 弹出颜色选择器
@@ -85,6 +86,7 @@ def gif_to_jpg_converter():
 def create_gif_from_images():
     root = tk.Tk()
     root.withdraw()  # 隐藏主窗口
+        
 
     # 弹出文件选择对话框让用户选择图片
     filetypes = [("Image files", "*.png;*.jpg;*.jpeg;*.bmp;*.gif")]
@@ -114,8 +116,70 @@ def create_gif_from_images():
     )
     
     print(f"GIF saved at {gif_path}")
-    
 
+def time_change():
+    # root = tk.Tk()
+    # root.withdraw()  # 隐藏主窗口
+    root_ = tk.Toplevel(root)  # 创建新的顶级窗口
+    label = tk.Label(root_, text="新窗口")
+    label.pack
+
+    # 将时间戳转换为datetime对象
+    def change_():
+     # 清空 Entry 输入框
+     entry__time.delete(0, tk.END)
+     timestamp = int(entry_time.get())
+     
+     dt = datetime.datetime.fromtimestamp(timestamp)
+    
+    # 格式化datetime对象为字符串
+     formatted_time = dt.strftime("%m/%d/%y %H:%M:%S")
+     entry__time.insert(0, str(formatted_time))
+    
+    def change():
+        entry_time.delete(0, tk.END)
+        timestamp_ = entry__time.get()
+        # 定义日期时间字符串的格式
+        date_format = "%m/%d/%y %H:%M:%S"
+        # 将字符串转换为datetime对象
+        dt = datetime.datetime.strptime(timestamp_, date_format)
+        # 将datetime对象转换为时间戳
+        timestamp = int(dt.timestamp())
+        entry_time.insert(0, str(timestamp))
+
+    # 第一行：创建标签和输入框
+    top_frame = tk.Frame(root_)
+    top_frame.pack(pady=10)
+
+    label_time = tk.Label(top_frame, text="时间_数值 ")
+    label_time.pack(side=tk.LEFT,padx=10,pady=20)
+
+    # 创建 Entry 小部件，并设置默认值
+    entry_time = tk.Entry(top_frame)
+    default_value = "1719822360"
+    entry_time.insert(0, default_value)
+    entry_time.pack(side=tk.LEFT,padx=10,pady=20)
+
+    btn_time = tk.Button(top_frame, text="时间——数值转换", command=change_)
+    btn_time.pack(side=tk.LEFT,padx=10,pady=20) 
+
+
+    # 第二行：创建结果显示的标签和输入框
+    middle_frame = tk.Frame(root_)
+    middle_frame.pack(pady=10)
+
+    label__time = tk.Label(middle_frame,text="时间_通用")
+    label__time.pack(side=tk.LEFT,padx=10,pady=20)
+    # 创建 Entry 小部件，并设置默认
+    entry__time = tk.Entry(middle_frame)
+    default_value = "07/01/24 16:26:00"
+    entry__time.insert(0, default_value)
+    entry__time.pack(side=tk.LEFT,padx=10,pady=20)
+    
+    btn__time = tk.Button(middle_frame, text="时间——通用转换", command=change)
+    btn__time.pack(side=tk.LEFT,padx=10,pady=20) 
+
+   
 # 创建主窗口
 root = tk.Tk()
 root.title("颜色选择器")
@@ -155,6 +219,9 @@ btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="GIF合成", command=create_gif_from_images)
 btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
+
+btn_show_font_list = tk.Button(root, text="时间格式转换", command=time_change)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 root.quit()
 

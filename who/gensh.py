@@ -86,7 +86,7 @@ class GachaProgram:
             screen.blit(self.result_image, (0, 0))
 
         pygame.display.flip()
-        self.clock.tick(30)  # 控制帧率为 30 FPS
+        self.clock.tick(10)  # 控制帧率为 30 FPS
 
     def render_text_with_background(self, text, x, y):
         text_surface = self.font.render(text, True, self.font_color)

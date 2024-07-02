@@ -2,7 +2,7 @@
 # encoding: utf-8
 
 import tkinter as tk
-from tkinter import colorchooser,font,messagebox,filedialog
+from tkinter import colorchooser,font,messagebox,filedialog,font
 import tkinter.ttk as ttk
 from PIL import Image
 import os
@@ -30,7 +30,23 @@ def copy_font_name(event):
         font_name = widget.get(selected_index[0])
         root.clipboard_clear()
         root.clipboard_append(font_name)
-        messagebox.showinfo("复制成功", f"已复制字体名 '{font_name}'")
+        # messagebox.showinfo("复制成功", f"已复制字体名 '{font_name}'")
+        # 创建顶层窗口
+        top = tk.Toplevel(root)
+        top.title("字体选择与预览")
+        top.geometry("300x150")
+                
+        # 创建 Label 小部件并设置字体
+        message = ("复制成功", f"已复制字体名 '{font_name}'")
+        msg_label = tk.Label(top, text=message)
+        msg_label.pack(pady=10)
+        Font_Preview = tk.Label(top, text="字体预览--Font Preview", font=(font_name, 12))
+        Font_Preview.pack(pady=10)
+    
+        # 创建 Button 小部件关闭消息框
+        ok_button = tk.Button(top, text="确定", command=top.destroy)
+        ok_button.pack(pady=5)
+        
 
 def show_font_list():
     # 创建一个新的顶级窗口来显示字体列表
@@ -58,6 +74,7 @@ def show_font_list():
 
     # 绑定双击事件，复制选中的字体名
     font_listbox.bind("<Double-Button-1>", copy_font_name)
+    
 
 def gif_to_jpg_converter():
     # 创建一个Tkinter根窗口并隐藏它

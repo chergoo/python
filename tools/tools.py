@@ -10,12 +10,44 @@ import sys
 import datetime
 
 def choose_color():
-    # 弹出颜色选择器
-    color_code = colorchooser.askcolor(title="选择颜色")
-    if color_code:
-        rgb, hex_color = color_code
-        # label_rgb.config(text=f"RGB: {rgb}")
-        # label_hex.config(text=f"16进制: {hex_color}")
+    # 创建一个新的顶级窗口来显示字体列表
+        color_window = tk.Toplevel(root)
+        color_window.geometry("300x150+150+250")  # 设置窗口大小为300x200，并将左上角定位在屏幕坐标（150，250）
+        color_window.title("颜色参数")
+
+        # 使用Entry组件来代替Label，并设置为只读
+        entry_rgb = tk.Entry(color_window, width=20, state='readonly')
+        entry_hex = tk.Entry(color_window, width=20, state='readonly')
+        entry_rgb.pack(pady=10)
+        entry_hex.pack()
+
+        color_code = colorchooser.askcolor(title="选择颜色")
+        if color_code:
+            rgb, hex_color = color_code
+            entry_rgb.config(state='normal')  # 设置为可编辑状态
+            entry_rgb.delete(0, tk.END)  # 清空之前的内容
+            entry_rgb.insert(0, f"RGB: {rgb}")  # 插入新的内容
+            entry_rgb.config(state='readonly')  # 设置为只读状态
+
+            entry_hex.config(state='normal')  # 设置为可编辑状态
+            entry_hex.delete(0, tk.END)  # 清空之前的内容
+            entry_hex.insert(0, f"Hex: {hex_color}")  # 插入新的内容
+            entry_hex.config(state='readonly')  # 设置为只读状态
+
+    # # 标签用于显示选择的颜色的RGB和16进制格式
+    #     label_rgb = tk.Label(color_window, text="RGB: ")
+    #     label_rgb.pack(pady=10)
+
+    #     label_hex = tk.Label(color_window, text="16进制: ")
+    #     label_hex.pack(pady=10)
+
+    # # 弹出颜色选择器
+    #     color_code = colorchooser.askcolor(title="选择颜色")
+    #     print("yansss",color_code)
+    #     if color_code:
+    #         rgb, hex_color = color_code
+    #         label_rgb.config(text=f"RGB: {rgb}")
+    #         label_hex.config(text=f"16进制: {hex_color}")
 
 def get_font_list():
     # 获取系统中可用的字体列表
@@ -218,12 +250,6 @@ root.protocol("WM_DELETE_WINDOW", on_closing)
 btn_choose_color = tk.Button(root, text="选择颜色", command=choose_color)
 btn_choose_color.pack(side=tk.LEFT,padx=10,pady=20) 
 
-# # 标签用于显示选择的颜色的RGB和16进制格式
-# label_rgb = tk.Label(root, text="RGB: ")
-# label_rgb.pack(pady=10)
-
-# label_hex = tk.Label(root, text="16进制: ")
-# label_hex.pack(pady=10)
 
 # 添加按钮用于显示字体列表
 btn_show_font_list = tk.Button(root, text="显示字体列表", command=show_font_list)

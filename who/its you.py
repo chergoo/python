@@ -7,10 +7,13 @@ from math import cos, sin, radians
 from PIL import Image, ImageTk
 
 class RandomSelectorApp:
+    
     def __init__(self, root, grid_names):
         self.root = root
         self.root.title("随机选择方格")
-        self.grid_size = 4
+        # self.grid_size = 4  #创建一个4×4的方格
+        self.rows = 4   #创建方格，行数为4
+        self.cols = 5   #创建方格，列数为5   
         self.grid_names = grid_names
         self.buttons = []
         self.running = False
@@ -21,17 +24,29 @@ class RandomSelectorApp:
 
     def create_widgets(self):
         # 创建方格按钮
-        for i in range(self.grid_size):
+        # for i in range(4):
+        #     row = []
+        #     for j in range(5):
+        #         btn = tk.Button(self.root, text=self.grid_names[i][j], width=10, height=5)
+        #         btn.grid(row=i, column=j, padx=5, pady=5)
+        #         row.append(btn)
+        #     self.buttons.append(row)
+        # 创建按钮并放置在网格中
+        # 定义网格尺寸
+        
+        for i in range(self.rows):
             row = []
-            for j in range(self.grid_size):
-                btn = tk.Button(self.root, text=self.grid_names[i][j], width=10, height=5)
+            for j in range(self.cols):
+                if i == 0 and j == 2:
+                    continue  # 跳过第一排中间的格子
+                btn = tk.Button(root, text=self.grid_names[i][j], width=10, height=5)
                 btn.grid(row=i, column=j, padx=5, pady=5)
                 row.append(btn)
             self.buttons.append(row)
-
         # 创建选择按钮
         self.select_button = tk.Button(self.root, text="开始/停止", command=self.toggle_random_selection)
-        self.select_button.grid(row=self.grid_size, column=0, columnspan=self.grid_size)
+        # self.select_button.grid(row=self.grid, column=0, columnspan=self.grid)
+        self.select_button.grid(row=self.rows, column=0, columnspan=self.cols)
 
         
 
@@ -51,19 +66,29 @@ class RandomSelectorApp:
     def random_select(self):
         if not self.running:
             return
+         # 检查按钮列表是否为空
+
+        if not self.buttons:
+            print("Button list is empty")
+            return
 
         # 重置所有方格的颜色
         for row in self.buttons:
             for btn in row:
                 btn.config(bg="SystemButtonFace")
 
+        while True:
         # 随机选择一个方格
-        random_row = random.randint(0, self.grid_size - 1)
-        random_col = random.randint(0, self.grid_size - 1)
-        self.selected_button = self.buttons[random_row][random_col]
-
-        # 将选择的方格变为红色
-        self.selected_button.config(bg="red")
+            random_row = random.randint(0, self.rows -1)
+            random_col = random.randint(0, self.cols -1)
+            print(random_row,random_col)
+            if random_row != 0 and random_col != 4: #因为中间一个无方格，在选到该处时需重选
+                self.selected_button = self.buttons[random_row][random_col]
+                # 将选择的方格变为红色
+                self.selected_button.config(bg="red")
+                break
+       
+        
 
         # 再次调用自己，设置为100毫秒后
         self.after_id = self.root.after(100, self.random_select)
@@ -122,10 +147,10 @@ if __name__ == "__main__":
 
     # 自定义方格名称
     grid_names = [
-        ["A1", "A2", "A3", "A4"],
-        ["B1", "B2", "B3", "B4"],
-        ["C1", "C2", "C3", "C4"],
-        ["D1", "D2", "D3", "D4"]
+        ["A1", "A2", "A3", "A4","A5"],
+        ["B1", "B2", "B3", "B4","B5"],
+        ["C1", "C2", "C3", "C4","C5"],
+        ["D1", "D2", "D3", "D4","D5"]
     ]
 
     app = RandomSelectorApp(root, grid_names)

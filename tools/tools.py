@@ -78,7 +78,8 @@ def copy_font_name(event):
         # 创建 Button 小部件关闭消息框
         ok_button = tk.Button(top, text="确定", command=top.destroy)
         ok_button.pack(pady=5)
-        
+
+       
 
 def show_font_list():
     # 创建一个新的顶级窗口来显示字体列表
@@ -96,16 +97,33 @@ def show_font_list():
     # 创建 Listbox 用于显示字体列表
     font_listbox = tk.Listbox(frame_font_list, yscrollcommand=scrollbar.set, selectmode=tk.SINGLE, width=40, height=10)
     scrollbar.config(command=font_listbox.yview)
-
+    
     # 获取并显示字体列表
     fonts = get_font_list()
     for font_name in fonts:
         font_listbox.insert(tk.END, font_name)
-
+    # 
     font_listbox.pack(side=tk.LEFT)
+
+    # 定义鼠标移动事件处理函数
+    def on_mouse_move(event):
+        widget = event.widget
+        index = widget.nearest(event.y)
+        if index >= 0:
+            font_name = widget.get(index)
+            preview_label.config(font=(font_name, 16), text=font_name) 
 
     # 绑定双击事件，复制选中的字体名
     font_listbox.bind("<Double-Button-1>", copy_font_name)
+    
+    # 绑定鼠标移动事件
+    font_listbox.bind("<Motion>", on_mouse_move)
+
+    preview_label = tk.Label(font_list_window, text="Preview Text", font=("Arial", 20))
+    preview_label.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True)
+
+    
+
     
 
 def gif_to_jpg_converter():

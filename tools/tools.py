@@ -9,6 +9,16 @@ import os
 import sys
 import datetime
 import random
+from geopy.geocoders import Nominatim  
+from random import uniform  
+import folium
+import requests
+import webbrowser
+import json
+from dotenv import load_dotenv
+import os
+
+
 
 kaomojis = {
     "欢乐":[
@@ -1099,7 +1109,69 @@ def kaomoji_choose():
 
     copy_button = ttk.Button(root_moji, text="Copy", command=copy_to_clipboard)
     copy_button.pack(pady=10)
-   
+
+def random_map():  
+    def generate_random_location():  
+        # 生成随机经纬度（这里只是示例，实际范围可能需要根据需要调整）  
+        # 中国的经纬度范围大致是从东经73°33′至135°05′，纬度从3°51′N至53°33′N。
+        lat = round(uniform(18.16, 53.33) ,6) # 纬度范围：-90到90  
+        lon = round(uniform(73.33, 135.05),6)  # 经度范围：-180到180  
+        # 高德API Key
+        load_dotenv()
+        
+        YOUR_AMAP_API_KEY = os.getenv('API_KEY')
+        
+        # 经纬度
+        YOUR_LATITUDE = lat
+        YOUR_LONGITUDE = lon
+        
+        # 构建请求URL
+        # url = f'https://restapi.amap.com/v3/geocode/regeo?key={YOUR_AMAP_API_KEY}&location={YOUR_LATITUDE},{YOUR_LONGITUDE}'
+        url = f'https://restapi.amap.com/v3/geocode/regeo?location={YOUR_LONGITUDE},{YOUR_LATITUDE}&key={YOUR_AMAP_API_KEY}&extensions=base' 
+        
+        # 发送请求
+        response = requests.get(url)
+        print("高德返回的地址",response.text)
+        
+        # 解析JSON响应
+        data = response.json()
+        # 检查状态码，确保请求成功
+        if data['status'] == '1':
+                # 打印详细地址
+                formatted_address = data['regeocode']['formatted_address']
+                print(formatted_address)
+        else:
+                print('请求失败，错误码：', data['infocode'])
+        return formatted_address,lat,lon
+
+    def check():
+        formatted_address,lat,lon =generate_random_location()
+        
+        while formatted_address ==[]:
+            print("地址为查询到，正在重试...")
+            formatted_address=generate_random_location()
+        return formatted_address,lat,lon
+        
+    formatted_address,lat,lon =check()
+    
+    # Create a map using Folium  
+    map = folium.Map(location=[lat, lon], zoom_start=12)  
+            
+    # Add a marker for the geocoded location  
+    folium.Marker([lat, lon], popup=formatted_address).add_to(map)  
+            
+    # Save the map to an HTML file for visualization  
+    # 保存地图到 map.html 文件
+    file_path = 'map.html'
+    map.save(file_path)
+            
+    # Display the map  
+ 
+    print("地图已经生成")
+    print(f"Random Latitude: {lat}, Longitude: {lon}")  
+    # 自动在默认浏览器中打开 map.html 文件
+    webbrowser.open(file_path)
+
 # 创建主窗口
 root = tk.Tk()
 root.title("颜色选择器")
@@ -1138,6 +1210,9 @@ btn_show_font_list = tk.Button(root, text="时间格式转换", command=time_cha
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 btn_show_font_list = tk.Button(root, text="颜文字选择", command=kaomoji_choose)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
+
+btn_show_font_list = tk.Button(root, text="？GO！", command=random_map)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 

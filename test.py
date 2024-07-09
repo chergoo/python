@@ -226,9 +226,221 @@
 # cc=random.randint(0,100)
 # print(cc)
 
-import torch
+# import torch
 
-# 检查 GPU 是否可用
-device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-print('Using device:', device)
+# # 检查 GPU 是否可用
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# print('Using device:', device)
+##########################################################随机画随机颜色的线
+# import numpy as np
+# import matplotlib.pyplot as plt
+# from matplotlib.animation import FuncAnimation
 
+# # 创建一个图形窗口
+# fig, ax = plt.subplots()
+# xdata, ydata = [], []
+# ln, = plt.plot([], [],  animated=True)  # 初始化
+
+# # 定义全局变量 i
+# i = 0
+
+# def init():
+#     ax.set_xlim(0, 1)
+#     ax.set_ylim(0, 1)
+#     return ln,
+
+# def update(frame):
+#     global i  # 声明使用全局变量 i
+#     # ax.cla()
+#     ax.set_xlim(0, 1)
+#     ax.set_ylim(0, 1)
+#     # 生成随机数
+#     xdata.append(np.random.rand())
+#     ydata.append(np.random.rand())
+#     # 生成随机颜色
+#     color = np.random.rand(3,)
+#     ln, = ax.plot(xdata, ydata, 'o-',color = color)
+#     i += 1  # 递增 i
+#     print(f"Update count: {i},{color}")
+#     if i > 1:
+#         xdata.clear()
+#         ydata.clear()
+#         # ax.cla()
+#         i=0
+#     return ln,
+
+# ani = FuncAnimation(fig, update, frames=np.linspace(0, 1, 128),
+#                     blit=False)
+
+# plt.show()
+##########################################################API访问受限
+
+# import numpy as np
+# import requests
+
+# # 生成随机经纬度
+# def generate_random_coordinates():
+#     # 生成随机的经度和纬度
+#     longitude = np.random.uniform(low=-180.0, high=180.0)
+#     latitude = np.random.uniform(low=-90.0, high=90.0)
+#     return latitude, longitude
+
+# # 获取地名
+# def get_location_name(latitude, longitude):
+    
+#     url = f"https://nominatim.openstreetmap.org/reverse?format=json&lat={latitude}&lon={longitude}&zoom=10&addressdetails=1"
+#     response = requests.get(url)
+#     print("-----------",response)
+#     if response.status_code == 200:
+#         data = response.json()
+#         print("data:",data)
+#         address = {
+#             'country': data.get('address', {}).get('country', 'Unknown'),
+#             'state': data.get('address', {}).get('state', 'Unknown'),
+#             'town': data.get('address', {}).get('town', 'Unknown')
+#         }
+        
+#         return address
+#     else:
+#         return "Unknown"
+# latitude, longitude = generate_random_coordinates()
+# # 获取地名
+# location_name = get_location_name(latitude, longitude)
+
+# # 打印结果
+# print(f"Latitude: {latitude}, Longitude: {longitude}")
+# print(f"Location Name: {location_name}")
+######################################################################
+
+from geopy.geocoders import Nominatim  
+from random import uniform  
+import folium
+# from pyecharts.charts import Map
+# from pyecharts import options as opts
+# from pyecharts.globals import ChartType, GeoType
+import requests
+import webbrowser
+import json
+
+def random_map():  
+    def generate_random_location():  
+        # 生成随机经纬度（这里只是示例，实际范围可能需要根据需要调整）  
+        # 中国的经纬度范围大致是从东经73°33′至135°05′，纬度从3°51′N至53°33′N。
+        lat = round(uniform(18.16, 53.33) ,6) # 纬度范围：-90到90  
+        lon = round(uniform(73.33, 135.05),6)  # 经度范围：-180到180  
+        # 高德API Key
+        YOUR_AMAP_API_KEY = 'API-key'
+        
+        # 经纬度
+        YOUR_LATITUDE = lat
+        YOUR_LONGITUDE = lon
+        
+        # 构建请求URL
+        # url = f'https://restapi.amap.com/v3/geocode/regeo?key={YOUR_AMAP_API_KEY}&location={YOUR_LATITUDE},{YOUR_LONGITUDE}'
+        url = f'https://restapi.amap.com/v3/geocode/regeo?location={YOUR_LONGITUDE},{YOUR_LATITUDE}&key={YOUR_AMAP_API_KEY}&extensions=base' 
+        
+        # 发送请求
+        response = requests.get(url)
+        print("高德返回的地址",response.text)
+        
+        # 解析JSON响应
+        data = response.json()
+        # 检查状态码，确保请求成功
+        if data['status'] == '1':
+                # 打印详细地址
+                formatted_address = data['regeocode']['formatted_address']
+                print(formatted_address)
+        else:
+                print('请求失败，错误码：', data['infocode'])
+        return formatted_address,lat,lon
+
+    def check():
+        formatted_address,lat,lon =generate_random_location()
+        
+        while formatted_address ==[]:
+            print("地址为查询到，正在重试...")
+            formatted_address=generate_random_location()
+        return formatted_address,lat,lon
+        
+    formatted_address,lat,lon =check()
+    
+    # Create a map using Folium  
+    map = folium.Map(location=[lat, lon], zoom_start=12)  
+            
+    # Add a marker for the geocoded location  
+    folium.Marker([lat, lon], popup=formatted_address).add_to(map)  
+            
+    # Save the map to an HTML file for visualization  
+    # 保存地图到 map.html 文件
+    file_path = 'map.html'
+    map.save(file_path)
+            
+    # Display the map  
+ 
+    print("地图已经生成")
+    print(f"Random Latitude: {lat}, Longitude: {lon}")  
+    # 自动在默认浏览器中打开 map.html 文件
+    webbrowser.open(file_path)
+
+
+
+    
+
+        
+  
+def get_location_info(lat, lon):  
+    geolocator = Nominatim(user_agent="geoapiExercises")  
+    try:  
+        location = geolocator.reverse((lat, lon), exactly_one=True)  
+        return location.raw  
+    except Exception as e:  
+        return f"Error: {e}"  
+
+def decimal_degrees_to_dms(deg):#转换经纬度
+    degrees = int(deg)
+    minutes = int((deg - degrees) * 60)
+    seconds = ((deg - degrees) * 60 - minutes) * 60
+    return degrees, minutes, seconds
+  
+# 生成随机经纬度  
+# lat, lon = generate_random_location()  
+random_map()
+
+
+# 转换经纬度为度分秒格式
+# lat_deg, lat_min, lat_sec = decimal_degrees_to_dms(lat)
+# long_deg, long_min, long_sec = decimal_degrees_to_dms(lon)
+# # lat_=({long_deg},{long_min},{long_sec})
+# lon_=({lat_deg}, {lat_min},{lat_sec})
+# print(f"随机生成的经度: {lat_deg}° {lat_min}' {lat_sec:.3f}\"")
+# print(f"随机生成的纬度: {long_deg}° {long_min}' {long_sec:.3f}\"")
+
+
+ 
+
+
+# # # 创建地图对象
+# m = Map()
+ 
+# # 添加数据
+# m.add(formatted_address, [list((lon, lat))], "china")
+# # 添加地理坐标数据
+# m.set_global_opts(
+#         title_opts=opts.TitleOpts(title="中国地图显示经纬度标点"),
+#         visualmap_opts=opts.VisualMapOpts(max_=200, is_piecewise=True),
+#     )
+
+ 
+
+# # 渲染地图到文件，也可以使用render_notebook()在Jupyter中渲染
+# m.render("高德地图.html")
+# # map.render_notebook()
+# # 获取并打印位置信息  
+# location_info = get_location_info(lat, lon)  
+# print(location_info)  
+  
+# # 注意：location_info是一个包含多种信息的字典，例如：  
+# # {'place_id': '...', 'licence': '...', 'osm_type': '...', 'osm_id': '...', 'lat': '...', 'lon': '...', ...}  
+# # 其中可能包含'display_name'字段，它提供了对应的地理位置名称  
+# if 'display_name' in location_info:  
+#     print(f"Approximate Location: {location_info['display_name']}")

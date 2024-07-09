@@ -21,3 +21,6 @@ html:
 ## 颜文字选择
 - 下拉框选择所需颜文字主题，点击show随机输出该主题颜文字，点击copy可复制。
 <u>颜文字来源 [kaomoji.ru](https://kaomoji.ru/en/)</u> 
+
+## ?GO！
+- 随机选择国内地点

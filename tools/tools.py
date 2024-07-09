@@ -4,7 +4,7 @@
 import tkinter as tk
 from tkinter import colorchooser,font,messagebox,filedialog,font
 import tkinter.ttk as ttk
-from PIL import Image
+from PIL import Image, ImageTk
 import os
 import sys
 import datetime
@@ -17,6 +17,7 @@ import webbrowser
 import json
 from dotenv import load_dotenv
 import os
+import io
 
 
 
@@ -1128,11 +1129,17 @@ def random_map():
         # 构建请求URL
         # url = f'https://restapi.amap.com/v3/geocode/regeo?key={YOUR_AMAP_API_KEY}&location={YOUR_LATITUDE},{YOUR_LONGITUDE}'
         url = f'https://restapi.amap.com/v3/geocode/regeo?location={YOUR_LONGITUDE},{YOUR_LATITUDE}&key={YOUR_AMAP_API_KEY}&extensions=base' 
-        
+        static_map_url = f"https://restapi.amap.com/v3/staticmap?location={YOUR_LONGITUDE},{YOUR_LATITUDE}&zoom=2&size=750*300&markers=mid,,A:{YOUR_LONGITUDE},{YOUR_LATITUDE}&key={YOUR_AMAP_API_KEY}"
         # 发送请求
         response = requests.get(url)
         print("高德返回的地址",response.text)
         
+        response1 = requests.get(static_map_url)
+        binary_data = response1.content
+
+        # 将二进制数据转换为PIL图像
+        image = Image.open(io.BytesIO(binary_data))
+
         # 解析JSON响应
         data = response.json()
         # 检查状态码，确保请求成功
@@ -1142,17 +1149,18 @@ def random_map():
                 print(formatted_address)
         else:
                 print('请求失败，错误码：', data['infocode'])
-        return formatted_address,lat,lon
+        return formatted_address,lat,lon,image,response1,data
 
     def check():
-        formatted_address,lat,lon =generate_random_location()
+        formatted_address,lat,lon,image,response1,data =generate_random_location()
         
-        while formatted_address ==[]:
+        while not formatted_address:
             print("地址为查询到，正在重试...")
-            formatted_address=generate_random_location()
-        return formatted_address,lat,lon
+            formatted_address,lat,lon,image,response1,data =generate_random_location()
         
-    formatted_address,lat,lon =check()
+        return formatted_address,lat,lon,image,response1,data
+        
+    formatted_address,lat,lon,image ,response1,data=check()
     
     # Create a map using Folium  
     map = folium.Map(location=[lat, lon], zoom_start=12)  
@@ -1164,17 +1172,75 @@ def random_map():
     # 保存地图到 map.html 文件
     file_path = 'map.html'
     map.save(file_path)
-            
+    # 将图片保存到本地
+    with open('go_map.png', 'wb') as f:
+        f.write(response1.content)
+        print("go_map.png已保存")        
     # Display the map  
  
     print("地图已经生成")
     print(f"Random Latitude: {lat}, Longitude: {lon}")  
     # 自动在默认浏览器中打开 map.html 文件
-    webbrowser.open(file_path)
+    root_map = tk.Toplevel(root)  # 创建新的顶级窗口
+    # label_m = ttk.Label(root_map, text=(f"经度: {lat}, 纬度: {lon}"))
+    # label_m.pack()
+    # 创建一个 Text 部件
+    text = tk.Text(root_map, height=2, width=40)
+    text.tag_configure("center", justify='center')
+    # 设置字体格式
+    text.tag_configure("font", font=('黑体', 12))
+    text.pack()
+    text.insert(tk.END,f"经度: {lat}, 纬度: {lon}",("center","font")) 
+
+    # 初始颜色和闪烁状态
+    def cho_color():
+        color_=random.choice(["red","blue","green","#ff8080","#ff00ff"])
+        label_test.config(foreground=color_)  # 更新Label的文本颜色
+        root_map.after(1000,cho_color)
+        return color_   
+    
+    custom_font = ('Arial', 14, 'bold')
+    label_test = ttk.Label(root_map, text="Goooooo", font=custom_font, justify='center',foreground="blue")
+    label_test.pack()
+
+    
+    cho_color()
+
+    formatted_address1 = data['regeocode']['formatted_address']
+    print("输出地址为",formatted_address1)
+
+    # label1 = ttk.Label(root_map, text=formatted_address1)
+    # label1.pack()
+    
+    text1 = tk.Text(root_map, height=2, width=60)
+    text1.tag_configure("center", justify='center')
+    # 设置字体格式
+    text1.tag_configure("font", font=('黑体', 12))
+    # 设置居中格式
+    text1.pack()
+    text1.insert(tk.END,formatted_address1,("center","font")) 
+
+    # 将PIL图像转换为Tkinter兼容的图像
+    tk_image = ImageTk.PhotoImage(image)
+    print("已经转化",tk_image)
+    # 创建一个标签用于显示图像
+    label2 = tk.Label(root_map, image=tk_image)
+    label2.pack()
+    # 保持对tk_image的引用，以防止其被垃圾回收
+    label2.image = tk_image
+    def show_map():
+        webbrowser.open(file_path)
+     # 按钮
+    button = tk.Button(root_map, text="Show Map", command=show_map)
+    button.pack(pady=10) 
+
+    
+
+    
 
 # 创建主窗口
 root = tk.Tk()
-root.title("颜色选择器")
+root.title("TOOl")
 
 # 当窗口关闭时，调用关闭函数
 def on_closing():

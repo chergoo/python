@@ -18,6 +18,8 @@ import json
 from dotenv import load_dotenv
 import os
 import io
+import tkinter.font as tkFont
+import matplotlib.font_manager as fm
 
 
 
@@ -1234,7 +1236,47 @@ def random_map():
     button = tk.Button(root_map, text="Show Map", command=show_map)
     button.pack(pady=10) 
 
-    
+def install_fonts():
+    # root = tk.Tk()
+    # root.withdraw()  # 隐藏主窗口
+    root_fonts = tk.Toplevel(root)  # 创建新的顶级窗口
+
+    # Function to retrieve all installed fonts
+    def get_installed_fonts():
+        return fm.findSystemFonts()
+
+   
+    # Create a Canvas widget to hold the Text widgets
+    canvas = tk.Canvas(root_fonts)
+    canvas.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+    # Add a scrollbar to the canvas
+    scrollbar = ttk.Scrollbar(root_fonts, orient=tk.VERTICAL, command=canvas.yview)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    # Create a frame inside the canvas to hold the Text widgets
+    frame = tk.Frame(canvas)
+    canvas.create_window((0, 0), window=frame, anchor=tk.NW)
+
+    # Get all installed fonts
+    font_list = get_installed_fonts()
+
+    # Function to create a new text widget for each font
+    def create_font_example(font_name, parent):
+        text_widget = tk.Text(parent, width=50, height=2, wrap=tk.WORD)
+        text_widget.pack(padx=10, pady=5)
+        text_widget.tag_configure("font", font=(font_name, 12))
+        text_widget.insert(tk.END, f"{font_name}---示例---", "font")
+
+    # Create a text widget for each font example
+    for font_path in font_list:
+        font_name = fm.FontProperties(fname=font_path).get_name()
+        create_font_example(font_name, frame)
+
+    # Configure the canvas to resize with the frame
+    frame.update_idletasks()  # Update frame size
+    canvas.config(scrollregion=canvas.bbox(tk.ALL))  # Set scroll region   
 
     
 
@@ -1255,30 +1297,41 @@ root.protocol("WM_DELETE_WINDOW", on_closing)
 # frame = tk.Frame(root)
 # frame.pack(padx=10, pady=10)
 
+# 第一行：创建标签和输入框
+top__frame = tk.Frame(root)
+top__frame.pack(pady=10)
+
 # 添加按钮用于打开颜色选择器
-btn_choose_color = tk.Button(root, text="选择颜色", command=choose_color)
+btn_choose_color = tk.Button(top__frame, text="选择颜色", command=choose_color)
 btn_choose_color.pack(side=tk.LEFT,padx=10,pady=20) 
 
 
 # 添加按钮用于显示字体列表
-btn_show_font_list = tk.Button(root, text="显示字体列表", command=show_font_list)
+btn_show_font_list = tk.Button(top__frame, text="显示字体列表", command=show_font_list)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20)
 
 # 添加按钮用于显示字体列表
-btn_show_font_list = tk.Button(root, text="GIF拆解", command=gif_to_jpg_converter)
+btn_show_font_list = tk.Button(top__frame, text="GIF拆解", command=gif_to_jpg_converter)
 btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 
 # 添加按钮用于显示字体列表
-btn_show_font_list = tk.Button(root, text="GIF合成", command=create_gif_from_images)
+btn_show_font_list = tk.Button(top__frame, text="GIF合成", command=create_gif_from_images)
 btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 
-btn_show_font_list = tk.Button(root, text="时间格式转换", command=time_change)
+btn_show_font_list = tk.Button(top__frame, text="时间格式转换", command=time_change)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
-btn_show_font_list = tk.Button(root, text="颜文字选择", command=kaomoji_choose)
+btn_show_font_list = tk.Button(top__frame, text="颜文字选择", command=kaomoji_choose)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
-btn_show_font_list = tk.Button(root, text="？GO！", command=random_map)
+# 第二行：创建标签和输入框
+mid__frame = tk.Frame(root)
+mid__frame.pack(pady=10)
+
+btn_show_font_list = tk.Button(mid__frame, text="？GO！", command=random_map)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
+
+btn_show_font_list = tk.Button(mid__frame, text="查询已安装字体", command=install_fonts)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 

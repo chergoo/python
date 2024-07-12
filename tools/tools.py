@@ -4,7 +4,7 @@
 import tkinter as tk
 from tkinter import colorchooser,font,messagebox,filedialog,font
 import tkinter.ttk as ttk
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk, ImageDraw, ImageFont
 import os
 import sys
 import datetime
@@ -20,6 +20,8 @@ import os
 import io
 import tkinter.font as tkFont
 import matplotlib.font_manager as fm
+import imageio
+import numpy as np
 
 
 
@@ -1278,7 +1280,259 @@ def install_fonts():
     frame.update_idletasks()  # Update frame size
     canvas.config(scrollregion=canvas.bbox(tk.ALL))  # Set scroll region   
 
+def pixel_art():
+    # def generate_char_pixel_art(char, font_path, font_size=100, image_size=(200, 200), pixel_size=20, color=None):
+    #     # 创建一个高分辨率的空白图像
+    #     image = Image.new('RGB', image_size, 'white')
+    #     draw = ImageDraw.Draw(image)
+    #     font = ImageFont.truetype(font_path, font_size)
+
+    #     # 获取文字边界框并计算大小
+    #     bbox = draw.textbbox((0, 0), char, font=font)
+    #     text_width = bbox[2] - bbox[0]
+    #     text_height = bbox[3] - bbox[1]
+    #     position = ((image_size[0] - text_width) // 2, (image_size[1] - text_height) // 2)
+        
+    #     # 在图像上绘制文字
+    #     if color is None:
+    #         color = (0, 0, 0)  # 默认黑色
+    #     draw.text(position, char, fill=color, font=font)
+        
+    #     # 将图像缩放为像素艺术效果
+    #     small_image_size = (image_size[0] // pixel_size, image_size[1] // pixel_size)
+    #     pixel_image = image.resize(small_image_size, Image.NEAREST)
+    #     pixel_image = pixel_image.resize(image_size, Image.NEAREST)
+    #     return pixel_image
+
+    # def generate_sentence_pixel_art_animation(sentence, font_path, output_path='animation.gif', font_size=100, image_size=(200, 200), pixel_size=20):
+    #     colors = [
+    #         (255, 0, 0),    # 红色
+    #         (0, 255, 0),    # 绿色
+    #         (0, 0, 255),    # 蓝色
+    #         (255, 255, 0),  # 黄色
+    #         (255, 0, 255),  # 紫色
+    #         (0, 255, 255)   # 青色
+    #     ]
+        
+    #     frames = []
+    #     for char in sentence:
+    #         color = random.choice(colors)
+    #         char_image = generate_char_pixel_art(char, font_path, font_size, image_size, pixel_size, color)
+    #         frames.append(char_image)
+        
+    #     # 保存为GIF动画
+    #     frames[0].save(output_path, save_all=True, append_images=frames[1:], duration=500, loop=0)
+    #     print("animation.gif已经输出至:",output_path)
+    #     messagebox.showinfo("提示","animation.gif已输出")
+
+
+
+    # # 创建主窗口
+    # root_pixart = tk.Toplevel(root)  # 创建新的顶级窗口
+
+    # font__path = ttk.Entry(root_pixart)
+    # default_value = "simhei"
+    # #  "STXingkai" "LiSu"  "HarmonyOS Sans SC" "STHupo"    "STXinwei"  "FZShuTi"
+    # font__path.insert(0, default_value)
+    # font__path.pack(side=tk.LEFT,padx=10,pady=20)
+    # # font_path = font__path.get()
+
+    # font__word = ttk.Entry(root_pixart)
+    # default_value = "你好，世界！"
+    # #  "STXingkai" "LiSu"  "HarmonyOS Sans SC" "STHupo"    "STXinwei"  "FZShuTi"
+    # font__word.insert(0, default_value)
+    # font__word.pack(side=tk.LEFT,padx=10,pady=20)
+    # # font_word = font__word.get()
+    # # print(font_word)
+
+    # # 使用下载的字体文件路径
+    # # font_path = 'simhei'  # 请确保字体文件在当前工作目录中
+    # #  "STXingkai" "LiSu"  "HarmonyOS Sans SC" "STHupo"    "STXinwei"  "FZShuTi"
+
+    # # 生成一句话的像素图动画，使用下载的黑体字体文件和随机颜色
+    # def start_wordani():
+    #     font_word = font__word.get()
+    #     print(font_word)
+    #     font_path = font__path.get()
+    #     print(font_path)
+
+    #     generate_sentence_pixel_art_animation(font_word, font_path, font_size=500, image_size=(600, 600), pixel_size=5)
+
+
+    # btn_show_font_list = tk.Button(root_pixart, text="开始生成", command=start_wordani)
+    # btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
+    root_pixart = tk.Toplevel(root)  # 创建新的顶级窗口
+    font__word = ttk.Entry(root_pixart)
+    default_value = "你好，世界！"
+    #  "STXingkai" "LiSu"  "HarmonyOS Sans SC" "STHupo"    "STXinwei"  "FZShuTi"
+    font__word.insert(0, default_value)
+    font__word.pack(side=tk.LEFT,padx=10,pady=20)
+    def creat():
+    # 准备数据
+        # 准备数据
+        text = font__word.get()
+        font_path = "simhei"  # 使用思源黑体字体
+        font_size = 100
+        output_gif = "output.gif"
+        frame_duration = 500  # 每秒播放几帧
+
+        # 创建字体对象
+        font = ImageFont.truetype(font_path, font_size)
+
+        # 创建随机颜色
+        def generate_random_colors(n):
+            
+            return [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in range(n)]
+
+        # 创建像素风格的字体图像
+        def create_pixel_font_image(char, font, colors, scale=2, image_size=(500, 500)):   #像素点大小设置
+            bbox = font.getbbox(char)
+            text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            
+            # 确保宽度和高度大于零
+            if text_width <= 0 or text_height <= 0:
+                return Image.new('RGB', image_size, (255, 255, 255))
+            
+            image = Image.new('RGB', (text_width, text_height), (255, 255, 255))
+            draw = ImageDraw.Draw(image)
+            draw.text((-bbox[0], -bbox[1]), char, font=font, fill=(0, 0, 0))
+            
+            # 缩小到像素风格
+            small_width, small_height = max(1, text_width // scale), max(1, text_height // scale)
+            pixel_image = image.resize((small_width, small_height), Image.NEAREST)
+            pixel_data = np.array(pixel_image)
+            
+            # 给每个像素点着不同的颜色
+            for x in range(pixel_data.shape[1]):
+                for y in range(pixel_data.shape[0]):
+                    if pixel_data[y, x, 0] < 128:  # 如果像素是黑色（字符的一部分）
+                        pixel_data[y, x] = colors[(x + y) % len(colors)]
+            
+            pixel_image = Image.fromarray(pixel_data)
+            pixel_image = pixel_image.resize(image_size, Image.NEAREST)
+            
+            return pixel_image
+
+        # 设置统一图像尺寸
+        image_size = (200, 200)
+
+        # 创建每一帧
+        frames = []
+        for i in range(len(text)):
+            char = text[i]
+            
+            # 创建一个新的图像
+            image = Image.new('RGB', image_size, (255, 255, 255))
+            draw = ImageDraw.Draw(image)
+            
+            # 生成随机颜色
+            colors = generate_random_colors(image_size[0] * image_size[1])
+            
+            # 创建字符的像素风格图像
+            char_image = create_pixel_font_image(char, font, colors, image_size=image_size)
+            image.paste(char_image, (0, 0))
+            
+            # 将图像转换为数组并加入帧列表
+            frames.append(np.array(image))
+            
+        # 保存为GIF
+        imageio.mimsave(output_gif, frames, "gif",duration=frame_duration ,loop =0)#loop=0 标识循环播放
+        messagebox.showinfo("提示","output_gif 已输出")
+        print("okkkkkkkkkkkkkkkkkkkkkkk")
+
+
+
+    btn_show_font_list = tk.Button(root_pixart, text="开始生成", command=creat)
+    btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20) 
+       
+
+def pixel_art1():
+
+    root_pix1 = tk.Toplevel(root)  # 创建新的顶级窗口
+
+    pix_text = ttk.Entry(root_pix1)
+    default_value = "你好，世界！"
+    #  "STXingkai" "LiSu"  "HarmonyOS Sans SC" "STHupo"    "STXinwei"  "FZShuTi"
+    pix_text.insert(0, default_value)
+    pix_text.pack(side=tk.LEFT,padx=10,pady=20)
+
+    # 准备数据
     
+    font_path = "simhei"  # 替换为实际的字体文件路径
+    font_size = 100
+    output_gif = "output.gif"
+    frame_duration = 500  # 每帧持续时间，单位为秒
+
+    def creat_gif():
+        text = pix_text.get()
+        # 创建字体对象
+        font = ImageFont.truetype(font_path, font_size)
+
+        # 创建随机颜色
+        def generate_random_colors(n):
+            return [(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255)) for _ in range(n)]
+
+
+        # 创建像素风格的字体图像
+        def create_pixel_font_image(char, font, colors, scale=3):
+            bbox = font.getbbox(char)
+            text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+            
+            # 确保宽度和高度大于零
+            if text_width <= 0 or text_height <= 0:
+                return Image.new('RGB', (scale, scale), (255, 255, 255))
+            
+            image = Image.new('RGB', (text_width, text_height), (255, 255, 255))
+            draw = ImageDraw.Draw(image)
+            draw.text((-bbox[0], -bbox[1]), char, font=font, fill=(0, 0, 0))
+            
+            # 缩小到像素风格
+            small_width, small_height = max(1, text_width // scale), max(1, text_height // scale)
+            pixel_image = image.resize((small_width, small_height), Image.NEAREST)
+            pixel_data = np.array(pixel_image)
+            
+            # 给每个像素点着不同的颜色
+            for x in range(pixel_data.shape[1]):
+                for y in range(pixel_data.shape[0]):
+                    if pixel_data[y, x, 0] < 128:  # 如果像素是黑色（字符的一部分）
+                        pixel_data[y, x] = colors[(x + y) % len(colors)]
+            
+            pixel_image = Image.fromarray(pixel_data)
+            return pixel_image.resize((text_width, text_height), Image.NEAREST)
+
+        # 计算图像尺寸
+        bbox = font.getbbox(text)
+        text_width, text_height = bbox[2] - bbox[0], bbox[3] - bbox[1]
+        image_size = (text_width, text_height)
+
+        # 创建每一帧
+        frames = []
+        for i in range(len(text)):
+            # 创建一个新的图像
+            image = Image.new('RGB', image_size, (255, 255, 255))
+            draw = ImageDraw.Draw(image)
+            
+            # 逐个字符绘制
+            x_offset = 0
+            for j in range(i + 1):
+                char = text[j]
+                colors = generate_random_colors(text_width * text_height)  # 为每个字符生成随机颜色
+                char_image = create_pixel_font_image(char, font, colors)
+                image.paste(char_image, (x_offset, 0))
+                x_offset += char_image.width
+            
+            # 将图像转换为数组并加入帧列表
+            frames.append(np.array(image))
+
+        # 保存为GIF
+        imageio.mimsave(output_gif, frames, duration=frame_duration)
+        
+
+        messagebox.showinfo("提示","GIF图已经输出")
+        
+
+    btn_show_font_list = tk.Button(root_pix1, text="开始生成", command=creat_gif)
+    btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 
 # 创建主窗口
 root = tk.Tk()
@@ -1332,6 +1586,12 @@ btn_show_font_list = tk.Button(mid__frame, text="？GO！", command=random_map)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 btn_show_font_list = tk.Button(mid__frame, text="查询已安装字体", command=install_fonts)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
+
+btn_show_font_list = tk.Button(mid__frame, text="像素字体动图", command=pixel_art)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
+
+btn_show_font_list = tk.Button(mid__frame, text="像素字体动图1", command=pixel_art1)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 

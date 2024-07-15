@@ -8,6 +8,8 @@ import win32con
 import win32api
 from PIL import Image
 import datetime
+import psutil
+import time
 
 # 宠物状态类
 class PetState:
@@ -45,6 +47,13 @@ pet_images = {
     PetState.HAPPY: load_gif_frames('pet_happy.gif'),
 }
 
+pet_state = PetState.HAPPY  # 初始状态为正常
+pet_frames = pet_images[pet_state]
+current_frame = 0 
+frame_duration = 100    # 每帧的持续时间
+last_frame_time = pygame.time.get_ticks()
+last_state_change_time = pygame.time.get_ticks()
+
 # 根据时间选择启动动画
 def get_start_animation():
     current_hour = datetime.datetime.now().hour
@@ -60,6 +69,7 @@ start_frame_count = len(start_frames)
 start_current_frame = 0
 start_frame_duration = 100  # 每帧持续时间，单位为毫秒
 last_start_frame_change_time = pygame.time.get_ticks()
+start_state = True
 
 # 设置窗口标题和初始大小
 window_size = (screen_width, screen_height)
@@ -82,13 +92,20 @@ pet_rect.x = screen_width - pet_rect.width
 pet_rect.y = screen_height - pet_rect.height
 
 # 记录上次状态切换时间和帧切换时间
-last_state_change_time = pygame.time.get_ticks()
-last_frame_change_time = pygame.time.get_ticks()
+# last_state_change_time = pygame.time.get_ticks()
+# last_frame_change_time = pygame.time.get_ticks()
 
 # 记录鼠标拖动状态
 dragging = False
 mouse_offset_x = 0
 mouse_offset_y = 0
+
+def is_vscode_running():
+    """Check if Visual Studio Code is running."""
+    for process in psutil.process_iter(['name']):
+        if process.info['name'] == 'Code.exe':
+            return True
+    return False
 
 # 主循环
 while True:
@@ -112,13 +129,57 @@ while True:
                     pet_rect.x = mouse_x + mouse_offset_x
                     pet_rect.y = mouse_y + mouse_offset_y
 
-    # 检查是否到了切换启动帧的时间
+    # 检查是否到了切换状态的时间
     current_time = pygame.time.get_ticks()
-    if current_time - last_start_frame_change_time >= start_frame_duration:
-        start_current_frame = (start_current_frame + 1) % start_frame_count
-        pet_image = start_frames[start_current_frame]
-        last_start_frame_change_time = current_time
+    # print("时间",current_time)
+    
+    if current_time - last_state_change_time >= 10000:  # 每隔10秒改变一次状态
+        if is_vscode_running():
+            print("VS Code is running!")
+            break
+        else:
+            print("Waiting for VS Code to start...")
+        # last_state_change_time = current_time  # 更新上次状态切换时间
+        start_state = False 
+        if pet_state == PetState.NORMAL:
+            pet_state = PetState.HUNGRY
+        elif pet_state == PetState.HUNGRY:
+            pet_state = PetState.HAPPY
+        else:
+            pet_state = PetState.NORMAL
+        # print("状态",pet_state)
+        pet_frames = pet_images[pet_state]  # 更新宠物帧列表
+        # current_frame = 0  # 重置当前帧
+        # pet_image = pet_frames[current_frame]  # 更新宠物图像
 
+        last_state_change_time = current_time  # 更新上次状态切换时间
+       
+        
+    if current_time - last_frame_time >= frame_duration:
+            current_frame = (current_frame + 1) % len(pet_frames)
+            pet_image = pet_frames[current_frame]
+            last_frame_time = current_time
+
+        
+
+
+    # 检查是否到了切换启动帧的时间
+    if start_state == True:
+        current_time = pygame.time.get_ticks()
+        if current_time - last_start_frame_change_time >= start_frame_duration:
+            start_current_frame = (start_current_frame + 1) % start_frame_count
+            pet_image = start_frames[start_current_frame]
+            last_start_frame_change_time = current_time
+
+    
+   
+    
+        
+        
+   
+
+       
+ 
     # 绘制宠物
     screen.fill((0, 0, 0, 0))  # 清屏为透明
     screen.blit(pet_image, pet_rect)  # 绘制宠物图像

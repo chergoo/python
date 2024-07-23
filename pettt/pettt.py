@@ -136,7 +136,7 @@ while True:
     if current_time - last_state_change_time >= 10000:  # 每隔10秒改变一次状态
         if is_vscode_running():
             print("VS Code is running!")
-            break
+            
         else:
             print("Waiting for VS Code to start...")
         # last_state_change_time = current_time  # 更新上次状态切换时间

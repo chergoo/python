@@ -1157,10 +1157,14 @@ def random_map():
 
     def check():
         formatted_address,lat,lon,image,response1,data =generate_random_location()
+        # 使用 UTF-8 编码计算字节长度
         
-        while not formatted_address:
+        byte_length = sum(len(s.encode('utf-8')) for s in formatted_address)
+        print("输出地址字节长度", formatted_address ,byte_length)
+        while not formatted_address or byte_length<22:
             print("地址为查询到，正在重试...")
             formatted_address,lat,lon,image,response1,data =generate_random_location()
+            byte_length = sum(len(s.encode('utf-8')) for s in formatted_address)
         
         return formatted_address,lat,lon,image,response1,data
         

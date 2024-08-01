@@ -10,12 +10,15 @@ from PIL import Image
 import datetime
 import psutil
 import time
+import pyautogui
 
 # 宠物状态类
 class PetState:
     NORMAL = 'normal'
     HUNGRY = 'hungry'
     HAPPY = 'happy'
+    CODING ='coding'
+    PLAY = 'playing'
 
 # 启动状态类
 class StartState:
@@ -29,6 +32,28 @@ pygame.init()
 # 获取屏幕尺寸
 screen_info = pygame.display.Info()
 screen_width, screen_height = screen_info.current_w, screen_info.current_h
+
+#获取鼠标位置
+initial_position = pyautogui.position()
+print("鼠标",initial_position)
+work = True
+timeout = 30  # 设置超时时间为30秒
+
+def mouse():
+    global initial_position, work  # 声明使用全局变量
+    # 获取当前鼠标位置
+    current_position= pyautogui.position()
+    print("当前",current_position)
+    # 如果initial_position未设置，初始化它
+    if initial_position is None:
+        initial_position = current_position
+    print("鼠标",initial_position)
+    if initial_position == current_position:
+        work = False
+    else:
+        work = True
+        initial_position = current_position
+    return work
 
 # 加载GIF动画的帧
 def load_gif_frames(filename):
@@ -45,6 +70,8 @@ pet_images = {
     PetState.NORMAL: load_gif_frames('pet_normal.gif'),
     PetState.HUNGRY: load_gif_frames('pet_hungry.gif'),
     PetState.HAPPY: load_gif_frames('pet_happy.gif'),
+    PetState.CODING:load_gif_frames('pet_coding.gif'),
+    PetState.PLAY:load_gif_frames('pet_play.gif')
 }
 
 pet_state = PetState.HAPPY  # 初始状态为正常
@@ -134,21 +161,30 @@ while True:
     # print("时间",current_time)
     
     if current_time - last_state_change_time >= 10000:  # 每隔10秒改变一次状态
-        if is_vscode_running():
+        start_state = False 
+        if not mouse():
+            pet_state = PetState.PLAY
+            x,y = pyautogui.position()
+            pet_rect.x = x
+            pet_rect.y = y
+        elif is_vscode_running():
             print("VS Code is running!")
+            pet_state = PetState.CODING
+            print(pet_state)
             
         else:
             print("Waiting for VS Code to start...")
         # last_state_change_time = current_time  # 更新上次状态切换时间
-        start_state = False 
-        if pet_state == PetState.NORMAL:
-            pet_state = PetState.HUNGRY
-        elif pet_state == PetState.HUNGRY:
-            pet_state = PetState.HAPPY
-        else:
-            pet_state = PetState.NORMAL
+            start_state = False 
+            if pet_state == PetState.NORMAL:
+                pet_state = PetState.HUNGRY
+            elif pet_state == PetState.HUNGRY:
+                pet_state = PetState.HAPPY
+            else:
+                pet_state = PetState.NORMAL
         # print("状态",pet_state)
         pet_frames = pet_images[pet_state]  # 更新宠物帧列表
+        print(pet_state)
         # current_frame = 0  # 重置当前帧
         # pet_image = pet_frames[current_frame]  # 更新宠物图像
 

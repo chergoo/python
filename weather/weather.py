@@ -3,6 +3,7 @@
 
 
 import requests
+from dotenv import load_dotenv
 
 def get_weather(api_key, city):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
@@ -13,6 +14,7 @@ def get_weather(api_key, city):
         weather = {
             "city": data["name"],
             "temperature": data["main"]["temp"],
+            "humidity":data["main"]["humidity"],
             "description": data["weather"][0]["description"]
         }
         return weather
@@ -22,17 +24,26 @@ def get_weather(api_key, city):
 
 import tkinter as tk
 import requests
+import  os
+from termcolor import colored
+
+load_dotenv()
+        
+YOUR_API_KEY = os.getenv('API_KEY')
 
 # 获取天气数据的函数
 def get_weather(api_key, city):
     url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={api_key}&units=metric"
     response = requests.get(url)
+   
     data = response.json()
+    print(data)
     
     if response.status_code == 200:
         weather = {
             "city": data["name"],
             "temperature": data["main"]["temp"],
+            "humidity":data["main"]["humidity"],
             "description": data["weather"][0]["description"]
         }
         return weather
@@ -41,28 +52,46 @@ def get_weather(api_key, city):
 
 # 显示天气信息的函数
 def show_weather():
-    api_key = "your API KEY"  # 替换为你的API密钥
+    api_key = YOUR_API_KEY  # 替换为你的API密钥
     # city = "Shanghai"  # 替换为你的城市
     cities = ["Shanghai", "Yichang", "Shenzhen"]  # 需要查询天气的城市列表
     weather_infos = []
+
+    # 创建窗口
+    root = tk.Tk()
+    root.title("Today's Weather")
+
     for city in cities:
         weather = get_weather(api_key, city)
+        Tem_c = weather['temperature']
+        RH = weather['humidity']
+        Tem_f = Tem_c *9/5 + 32
+        T = Tem_f
+        HI_f = -42.379 + 2.04901523*T+10.14333127*RH - 0.22475541*T*RH-6.83783*10**(-3)*T**2 - 5.481717*10**(-2)*RH**2 + 1.22874*10**(-3)*T**2*RH+8.5282*10**(-4)*T*RH**2-1.99*10**(-6)*T**2*RH**2
+
+        HI_c = 5/9 * (HI_f-32)  
+        if Tem_c >35:
+            color_ = "red"
+        elif 30 <= Tem_c <= 35:
+            color_ = "orange"
+        elif 10 <= Tem_c <= 30:
+            color_ = "green"
+        else :
+            color_ = "blue"
+
+        print(Tem_c,RH)
         if weather:
-            weather_info = f"{weather['city']}\nTemperature: {weather['temperature']}°C\nDescription: {weather['description']}\n"
+            weather_info = f"{weather['city']}\n温度: {weather['temperature']}°C\n湿度:{weather['humidity']}%\nDescription: {weather['description']}\n酷热指数:{HI_c:.2f}°C\n"
+             # 创建标签
+            label = tk.Label(root, text=weather_info, font=("Helvetica", 16), padx=20, pady=20,fg=color_)
+            label.pack()
+    
             weather_infos.append(weather_info)
         else:
             weather_infos.append(f"Failed to get weather data for {city}\n")
     
     # 合并所有城市的天气信息
     combined_weather_info = "\n".join(weather_infos)
-    
-    # 创建窗口
-    root = tk.Tk()
-    root.title("Today's Weather")
-    
-    # 创建标签
-    label = tk.Label(root, text=combined_weather_info, font=("Helvetica", 16), padx=20, pady=20)
-    label.pack()
     
     # 关闭窗口按钮
     button = tk.Button(root, text="Close", command=root.destroy, padx=20, pady=10)

@@ -65,11 +65,15 @@ def show_weather():
         weather = get_weather(api_key, city)
         Tem_c = weather['temperature']
         RH = weather['humidity']
-        Tem_f = Tem_c *9/5 + 32
-        T = Tem_f
-        HI_f = -42.379 + 2.04901523*T+10.14333127*RH - 0.22475541*T*RH-6.83783*10**(-3)*T**2 - 5.481717*10**(-2)*RH**2 + 1.22874*10**(-3)*T**2*RH+8.5282*10**(-4)*T*RH**2-1.99*10**(-6)*T**2*RH**2
+        if Tem_c>26.6 and RH>40:
+                
+            Tem_f = Tem_c *9/5 + 32
+            T = Tem_f
+            HI_f = -42.379 + 2.04901523*T+10.14333127*RH - 0.22475541*T*RH-6.83783*10**(-3)*T**2 - 5.481717*10**(-2)*RH**2 + 1.22874*10**(-3)*T**2*RH+8.5282*10**(-4)*T*RH**2-1.99*10**(-6)*T**2*RH**2
 
-        HI_c = 5/9 * (HI_f-32)  
+            HI_c = 5/9 * (HI_f-32)  
+        else:
+            HI_c = 0
         if Tem_c >35:
             color_ = "red"
         elif 30 <= Tem_c <= 35:
@@ -96,6 +100,9 @@ def show_weather():
     # 关闭窗口按钮
     button = tk.Button(root, text="Close", command=root.destroy, padx=20, pady=10)
     button.pack()
+    text_hi = "酷热指数为0表示酷热指数公式不在有效范围内"
+    label_hi = tk.Label(root, text=text_hi, font=("楷体", 8), padx=10, pady=20,fg="black")
+    label_hi.pack()
 
     # 运行主循环
     root.mainloop()

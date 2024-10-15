@@ -22,8 +22,9 @@ import tkinter.font as tkFont
 import matplotlib.font_manager as fm
 import imageio
 import numpy as np
-
-
+import subprocess  # 导入 subprocess 模块
+import tempfile
+import shutil
 
 kaomojis = {
     "欢乐":[
@@ -1538,6 +1539,44 @@ def pixel_art1():
     btn_show_font_list = tk.Button(root_pix1, text="开始生成", command=creat_gif)
     btn_show_font_list.pack(side=tk.LEFT,padx=20,pady=20)
 
+def sun():
+    try:
+        # 获取 sun.py 的路径
+        if getattr(sys, 'frozen', False):
+            # 如果是打包的 exe 文件，使用临时目录存放 sun.py
+            temp_dir = tempfile.mkdtemp()
+            sun_py_path = os.path.join(temp_dir, 'Sun.py')
+
+            # 从打包的资源中提取 sun.py
+            with open(sun_py_path, 'wb') as f:
+                f.write(open(os.path.join(sys._MEIPASS, 'Sun.py'), 'rb').read())
+        else:
+            # 如果是普通 Python 代码，直接使用相对路径
+            sun_py_path = os.path.join(os.path.dirname(__file__), 'Sun.py')
+
+        # 使用 subprocess 来运行 sun.py
+        result = subprocess.run(['python', sun_py_path], capture_output=True, text=True)
+        
+        if result.returncode == 0:
+            print(result.stdout)
+        else:
+            print(f"运行错误: {result.stderr}")
+    finally:
+        # 清理临时文件
+        if os.path.exists(temp_dir):
+            shutil.rmtree(temp_dir)
+    # try:
+    #     # 使用 subprocess 来运行 sun.py
+    #     result = subprocess.run(['python', 'sun.py'], capture_output=True, text=True)
+        
+    #     # # 如果运行成功，显示输出结果
+    #     # if result.returncode == 0:
+    #     #     messagebox.showinfo("结果", f"程序输出:\n{result.stdout}")
+    #     # else:
+    #     #     messagebox.showerror("错误", f"程序运行失败: {result.stderr}")
+    # except Exception as e:
+    #     messagebox.showerror("错误", f"无法运行脚本: {e}")
+
 # 创建主窗口
 root = tk.Tk()
 root.title("TOOl")
@@ -1598,6 +1637,8 @@ btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20)
 btn_show_font_list = tk.Button(mid__frame, text="像素字体动图1", command=pixel_art1)
 btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
+btn_show_font_list = tk.Button(mid__frame, text="日升日落", command=sun)
+btn_show_font_list.pack(side=tk.LEFT,padx=10,pady=20) 
 
 root.quit()
 

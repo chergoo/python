@@ -8,6 +8,8 @@ from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.popup import Popup
 from kivy.core.text import LabelBase
 
+#一个简单的订阅管理器，可以添加、删除、修改订阅项目，显示下次续费日期和倒计时天数，支持中文显示。
+
 # 注册支持中文的字体（请确保 SimHei.ttf 文件在项目目录中）
 LabelBase.register(name="SimHei", fn_regular="SimHei.ttf")
 

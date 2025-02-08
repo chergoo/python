@@ -4,7 +4,7 @@ from tkinter import messagebox
 import random
 from PIL import Image, ImageDraw  
 import pystray  
-
+#一个闹钟小脚本，可以设置闹钟时间和闹钟提示语，到时间后会弹出提示框，提示框会震动一下
 def set_alarm():
     # 获取用户输入的时间
     alarm_time = entry.get()

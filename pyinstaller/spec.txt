@@ -1,0 +1,99 @@
+# -*- mode: python ; coding: utf-8 -*-
+
+block_cipher = None
+
+a = Analysis(
+    ['teat.py'],  # 要打包的主脚本文件
+    pathex=['.'],  # 搜索路径，当前目录
+    binaries=[],  # 额外的二进制文件
+    datas=[('simhei.ttf', '.')],  # 额外的数据文件，这里包含了字体文件
+    hiddenimports=[],  # 隐藏导入的模块
+    hookspath=[],  # 钩子文件的路径
+    runtime_hooks=[],  # 运行时钩子
+    excludes=[],  # 要排除的模块
+    win_no_prefer_redirects=False,  # Windows特定选项，是否不偏好重定向
+    win_private_assemblies=False,  # Windows特定选项，是否使用私有程序集
+    cipher=block_cipher,  # 加密选项
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)  # 创建Python字节码存档
+
+exe = EXE(
+    pyz,  # 包含的Python字节码存档
+    a.scripts,  # 要执行的脚本
+    [],  # 额外的选项
+    exclude_binaries=True,  # 是否排除二进制文件
+    name='teat',  # 生成的可执行文件的名称
+    debug=False,  # 是否启用调试模式
+    bootloader_ignore_signals=False,  # 引导程序是否忽略信号
+    strip=False,  # 是否剥离可执行文件
+    upx=True,  # 是否使用UPX压缩
+    upx_exclude=[],  # 不使用UPX压缩的文件
+    runtime_tmpdir=None,  # 运行时临时目录
+    console=False,  # 是否显示控制台窗口，设置为False以隐藏控制台
+    icon='icon.ico',  # 可执行文件的图标
+)
+
+coll = COLLECT(
+    exe,  # 包含的可执行文件
+    a.binaries,  # 包含的二进制文件
+    a.zipfiles,  # 包含的zip文件
+    a.datas,  # 包含的数据文件
+    strip=False,  # 是否剥离文件
+    upx=True,  # 是否使用UPX压缩
+    upx_exclude=[],  # 不使用UPX压缩的文件
+    name='teat',  # 生成的目录名称
+)
+
+# 将所有内容打包成一个单独的可执行文件
+app = BUNDLE(
+    coll,
+    name='teat',
+    icon='icon.ico',
+    bundle_identifier=None
+)-*- mode: python ; coding: utf-8 -*-
+
+block_cipher = None
+
+a = Analysis(
+    ['teat.py'],  # 要打包的主脚本文件
+    pathex=['.'],  # 搜索路径，当前目录
+    binaries=[],  # 额外的二进制文件
+    datas=[('simhei.ttf', '.')],  # 额外的数据文件，这里包含了字体文件
+    hiddenimports=[],  # 隐藏导入的模块
+    hookspath=[],  # 钩子文件的路径
+    runtime_hooks=[],  # 运行时钩子
+    excludes=[],  # 要排除的模块
+    win_no_prefer_redirects=False,  # Windows特定选项，是否不偏好重定向
+    win_private_assemblies=False,  # Windows特定选项，是否使用私有程序集
+    cipher=block_cipher,  # 加密选项
+)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)  # 创建Python字节码存档
+
+exe = EXE(
+    pyz,  # 包含的Python字节码存档
+    a.scripts,  # 要执行的脚本
+    [],  # 额外的选项
+    exclude_binaries=True,  # 是否排除二进制文件
+    name='teat',  # 生成的可执行文件的名称
+    debug=False,  # 是否启用调试模式
+    bootloader_ignore_signals=False,  # 引导程序是否忽略信号
+    strip=False,  # 是否剥离可执行文件
+    upx=True,  # 是否使用UPX压缩
+    upx_exclude=[],  # 不使用UPX压缩的文件
+    runtime_tmpdir=None,  # 运行时临时目录
+    console=False,  # 是否显示控制台窗口，设置为False以隐藏控制台
+    icon='icon.ico',  # 可执行文件的图标
+)
+
+coll = COLLECT(
+    exe,  # 包含的可执行文件
+    a.binaries,  # 包含的二进制文件
+    a.zipfiles,  # 包含的zip文件
+    a.datas,  # 包含的数据文件
+    strip=False,  # 是否剥离文件
+    upx=True,  # 是否使用UPX压缩
+    upx_exclude=[],  # 不使用UPX压缩的文件
+    name='teat',  # 生成的目录名称
+)

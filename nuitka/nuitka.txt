@@ -1,0 +1,25 @@
+
+python -m nuitka --standalone --onefile --enable-plugin=tk-inter --include-data-file=simhei.ttf=simhei.ttf --windows-icon-from-ico=icon.ico --windows-console-mode=disable --show-memory teat.py
+
+--windows-console-mode=CONSOLE_MODE
+控制台模式："force"（默认，无控制台时创建）、"disable"（禁用）、"attach"（附加现有控制台）、"hide"（隐藏新控制台）。
+--windows-icon-from-ico=ICON_PATH
+添加可执行图标（可多次指定，支持#<n>选择多图标文件中的特定图标）。
+--windows-company-name = Windows下公司名称
+--windows-product-name = windows下软件名称
+--windows-file-version = windows下软件信息
+--windows-product-version = windows下产品信息
+--windows-file-description = windows下软件描述
+--show-memory 显示内存使用信息。默认关闭。
+--remove-output 编译后删除构建目录。默认关闭。
+--output-filename=FILENAME
+指定输出文件名（扩展模块/独立模式不可用）。默认为'<程序名>.exe'。
+--output-dir=DIRECTORY
+指定中间及最终输出目录。默认为当前目录。
+--standalone 启用独立模式输出。生成的二进制文件可在无Python环境的机器上运行，但体积较大。隐含启用 "--follow-imports" 和 "--python-flag=no_site"。默认为关闭。
+--onefile 在独立模式基础上启用单文件模式，生成压缩后的单一可执行文件。默认为关闭。
+--plugin-enable=tk-inter 打包tkinter模块刚需
+--plugin-enable=numpy 打包numpy模块刚需
+--plugin-enable=torch 打包torch模块刚需
+--plugin-enable=tensorflow 打包tensorflow模块刚需
+--windows-disable-console 没有CMD窗口

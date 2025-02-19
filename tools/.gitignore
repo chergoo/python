@@ -1,2 +1,4 @@
 .env
 dist/
+go_map.png
+map.html

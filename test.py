@@ -310,101 +310,7 @@
 # # 打印结果
 # print(f"Latitude: {latitude}, Longitude: {longitude}")
 # print(f"Location Name: {location_name}")
-######################################################################
-
-from geopy.geocoders import Nominatim  
-from random import uniform  
-import folium
-# from pyecharts.charts import Map
-# from pyecharts import options as opts
-# from pyecharts.globals import ChartType, GeoType
-import requests
-import webbrowser
-import json
-
-def random_map():  
-    def generate_random_location():  
-        # 生成随机经纬度（这里只是示例，实际范围可能需要根据需要调整）  
-        # 中国的经纬度范围大致是从东经73°33′至135°05′，纬度从3°51′N至53°33′N。
-        lat = round(uniform(18.16, 53.33) ,6) # 纬度范围：-90到90  
-        lon = round(uniform(73.33, 135.05),6)  # 经度范围：-180到180  
-        # 高德API Key
-        YOUR_AMAP_API_KEY = 'API-key'
-        
-        # 经纬度
-        YOUR_LATITUDE = lat
-        YOUR_LONGITUDE = lon
-        
-        # 构建请求URL
-        # url = f'https://restapi.amap.com/v3/geocode/regeo?key={YOUR_AMAP_API_KEY}&location={YOUR_LATITUDE},{YOUR_LONGITUDE}'
-        url = f'https://restapi.amap.com/v3/geocode/regeo?location={YOUR_LONGITUDE},{YOUR_LATITUDE}&key={YOUR_AMAP_API_KEY}&extensions=base' 
-        
-        # 发送请求
-        response = requests.get(url)
-        print("高德返回的地址",response.text)
-        
-        # 解析JSON响应
-        data = response.json()
-        # 检查状态码，确保请求成功
-        if data['status'] == '1':
-                # 打印详细地址
-                formatted_address = data['regeocode']['formatted_address']
-                print(formatted_address)
-        else:
-                print('请求失败，错误码：', data['infocode'])
-        return formatted_address,lat,lon
-
-    def check():
-        formatted_address,lat,lon =generate_random_location()
-        
-        while formatted_address ==[]:
-            print("地址为查询到，正在重试...")
-            formatted_address=generate_random_location()
-        return formatted_address,lat,lon
-        
-    formatted_address,lat,lon =check()
-    
-    # Create a map using Folium  
-    map = folium.Map(location=[lat, lon], zoom_start=12)  
-            
-    # Add a marker for the geocoded location  
-    folium.Marker([lat, lon], popup=formatted_address).add_to(map)  
-            
-    # Save the map to an HTML file for visualization  
-    # 保存地图到 map.html 文件
-    file_path = 'map.html'
-    map.save(file_path)
-            
-    # Display the map  
- 
-    print("地图已经生成")
-    print(f"Random Latitude: {lat}, Longitude: {lon}")  
-    # 自动在默认浏览器中打开 map.html 文件
-    webbrowser.open(file_path)
-
-
-
-    
-
-        
-  
-def get_location_info(lat, lon):  
-    geolocator = Nominatim(user_agent="geoapiExercises")  
-    try:  
-        location = geolocator.reverse((lat, lon), exactly_one=True)  
-        return location.raw  
-    except Exception as e:  
-        return f"Error: {e}"  
-
-def decimal_degrees_to_dms(deg):#转换经纬度
-    degrees = int(deg)
-    minutes = int((deg - degrees) * 60)
-    seconds = ((deg - degrees) * 60 - minutes) * 60
-    return degrees, minutes, seconds
-  
-# 生成随机经纬度  
-# lat, lon = generate_random_location()  
-random_map()
+# #########1995-
 
 
 # 转换经纬度为度分秒格式
@@ -444,3 +350,36 @@ random_map()
 # # 其中可能包含'display_name'字段，它提供了对应的地理位置名称  
 # if 'display_name' in location_info:  
 #     print(f"Approximate Location: {location_info['display_name']}")
+
+from datetime import datetime
+
+def calculate_time_interval(birth_time_str):
+    # 解析输入时间（支持格式：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS）
+    try:
+        birth_time = datetime.strptime(birth_time_str, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        birth_time = datetime.strptime(birth_time_str, "%Y-%m-%d")
+    
+    current_time = datetime.now()
+    delta = current_time - birth_time  # 计算时间差
+    
+    total_seconds = delta.total_seconds()  # 总秒数‌:ml-citation{ref="5" data="citationList"}
+    total_minutes = total_seconds / 60      # 总分钟数‌:ml-citation{ref="1" data="citationList"}
+    total_hours = total_minutes / 60        # 总小时数‌:ml-citation{ref="1" data="citationList"}
+    total_days = total_hours / 24           # 总天数‌:ml-citation{ref="3" data="citationList"}
+    total_months = total_days / 30          # 近似总月数（按30天/月）‌:ml-citation{ref="4" data="citationList"}
+    total_years = total_days / 365          # 近似总年数（按365天/年）‌:ml-citation{ref="5" data="citationList"}
+
+    return {
+        "秒": int(total_seconds),
+        "分钟": int(total_minutes),
+        "小时": int(total_hours),
+        "天": int(total_days),
+        "月": int(total_months),
+        "年": int(total_years)
+    }
+
+# 示例输入与输出
+birth_input = input("请输入出生时间（格式：YYYY-MM-DD 或 YYYY-MM-DD HH:MM:SS）：")
+result = calculate_time_interval(birth_input)
+print(f"距离当前时间相隔：{result['秒']}秒 / {result['分钟']}分钟 / {result['小时']}小时 / {result['天']}天 / {result['月']}月 / {result['年']}年")

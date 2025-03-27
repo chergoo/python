@@ -1,7 +1,7 @@
 # script.spec
 # -*- mode: python ; coding: utf-8 -*-
 
-# pyinstaller --onefile --noconsole --icon=icon.ico script.py
+# pyinstaller --onefile --noconsole --icon=icon.ico --version-file=version_info.txt script.py
 # --onefile：将所有文件打包成一个独立的 EXE 文件。
 # --noconsole：隐藏控制台窗口（适用于 GUI 应用程序）。
 # --icon=icon.ico：指定图标文件（替换 icon.ico 为你的图标文件路径）。

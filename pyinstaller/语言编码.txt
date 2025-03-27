@@ -1,0 +1,18 @@
+
+语言/地区	标识符	说明
+英语-美国 (默认)	040904B0	最通用的配置
+中文-简体	080404B0	08=中文, 04=简体
+中文-繁体	040404B0	04=繁体
+日语	041104B0	11=日语
+德语	040704B0	07=德语
+
+def resource_path(relative_path):
+    """获取打包后的文件路径"""
+    if getattr(sys, '_MEIPASS', None):
+        # PyInstaller 打包后的路径
+        base_path = sys._MEIPASS
+    else:
+        # 源代码运行时的路径
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)

@@ -15,6 +15,10 @@ plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
 
 class SerialApp(tk.Tk):
     def __init__(self):
+        
+        self.ser = None  # 串口对象
+        self.serial_thread = None  # 串口读取线程
+        self.is_connected = False  # 连接状态标志
         super().__init__()
 
         self.title("SC6-数据接收和显示")
@@ -28,7 +32,7 @@ class SerialApp(tk.Tk):
         self.port_combobox.pack(pady=5)
         self.refresh_ports()
 
-        self.connect_button = ttk.Button(self, text="连接", command=self.connect_serial)
+        self.connect_button = ttk.Button(self, text="连接", command=self.toggle_serial_connection)
         self.connect_button.pack(pady=5)
 
         # 设备信息显示
@@ -62,6 +66,13 @@ class SerialApp(tk.Tk):
         self.canvas = FigureCanvasTkAgg(self.figure, self)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=1)
 
+    def toggle_serial_connection(self):
+        """切换串口连接状态"""
+        if not self.is_connected:
+            self.connect_serial()  # 连接串口
+        else:
+            self.disconnect_serial()  # 断开串口
+
     def refresh_ports(self):
         ports = serial.tools.list_ports.comports()
         self.port_combobox['values'] = [port.device for port in ports]
@@ -69,20 +80,35 @@ class SerialApp(tk.Tk):
     def connect_serial(self):
         selected_port = self.port_combobox.get()
         if selected_port:
-            self.ser = serial.Serial(selected_port, 115200, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
-            self.start_serial_thread()
+            try:
+                self.ser = serial.Serial(selected_port, 115200, stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS)
+                self.is_connected = True
+                self.start_serial_thread()
+                self.connect_button.config(text="断开", style="Green.TButton")  # 按钮变绿
+            except Exception as e:
+                print(f"连接失败: {e}")
 
     def start_serial_thread(self):
         self.serial_thread = threading.Thread(target=self.read_serial_data)
         self.serial_thread.daemon = True
         self.serial_thread.start()
 
+    def disconnect_serial(self):
+        """断开串口并停止读取线程"""
+        if self.ser and self.ser.is_open:
+            self.ser.close()  # 关闭串口
+        self.is_connected = False
+        self.connect_button.config(text="连接", style="Red.TButton")  # 按钮变红
+
     def read_serial_data(self):
-        while True:
+        while self.is_connected:
             if self.ser.in_waiting:
                 line = self.ser.readline().decode('ascii').strip()
                 data = line.split(',')
-
+                # 将列表元素拼接成字符串，并用空格分隔
+                output_string = ' '.join(data)
+                with open(f'sc6_data.txt', 'a') as file:
+                    file.write(output_string+"\n")
                 if len(data) >= 40:
                     device_model = data[0]
                     device_serial = data[1]
@@ -120,5 +146,15 @@ class SerialApp(tk.Tk):
         self.canvas.draw()
 
 if __name__ == "__main__":
+    
+# 创建主窗口
+    
     app = SerialApp()
-    app.mainloop()
+    head = "ID,SN,DD/MM/YYYY,hh:mm:ss.sss,Flag,Voltage,Depth,TempW,Tilt,Sig[0],Tpcb[0],LEDref[0],Dark[0],LEDval[0],TLED[0],Sig[1],Tpcb[1],LEDref[1],Dark[1],LEDval[1],TLED[1],Sig[2],Tpcb[2],LEDref[2],Dark[2],LEDval[2],TLED[2],Sig[3],Tpcb[3],LEDref[3],Dark[3],LEDval[3],TLED[3],Sig[4],Tpcb[4],LEDref[4],Dark[4],LEDval[4],TLED[4],Sig[5],Tpcb[5],LEDref[5],Dark[5],LEDval[55],TLED[5]"
+    with open(f'sc6_data.txt', 'w') as file:
+        file.write(head+"\n")
+    # 定义按钮样式
+style = ttk.Style()
+style.configure("Green.TButton", foreground="black", background="green")
+style.configure("Red.TButton", foreground="black", background="red")
+app.mainloop()

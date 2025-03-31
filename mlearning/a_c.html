@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>排列组合计算器</title>
+    <script>
+        
+
+        // 计算阶乘
+        function factorial(n) {
+            if (n === 0 || n === 1) return 1;
+            let result = 1;
+            for (let i = 2; i <= n; i++) {
+                result *= i;
+            }
+            return result;
+        }
+
+        // 计算排列 P(n, k)
+        function calculatePermutation(n,k) {
+            
+            if (n < k) {
+                alert("n 必须大于等于 k！");
+                return;
+            }
+            let result = factorial(n) / factorial(n - k);
+            // document.getElementById("resultP").innerText = `P(${n}, ${k}) = ${result}`;
+            return result;
+        }
+
+        // 计算组合 C(n, k)
+        function calculateCombination(n,k) {
+            // let n = parseInt(document.getElementById("n").value);
+            // let k = parseInt(document.getElementById("k").value);
+            if (n < k) {
+                alert("n 必须大于等于 k！");
+                return;
+            }
+            let result = factorial(n) / (factorial(k) * factorial(n - k));
+            return result;
+        }
+       
+        function cc(){
+            let n = parseInt(document.getElementById("n").value);
+            let k = parseInt(document.getElementById("k").value);
+            let result = calculateCombination(n,k);
+            document.getElementById("resultC").innerText = `C(${n}, ${k}) = ${result}`;
+        }
+
+        function pp(){
+            let n = parseInt(document.getElementById("n").value);
+            let k = parseInt(document.getElementById("k").value);
+            let result = calculatePermutation(n,k);
+            document.getElementById("resultP").innerText = `P(${n}, ${k}) = ${result}`;
+        }
+         // 计算最大公约数（GCD）
+        function gcd(a, b) {
+            while (b !== 0) {
+                let temp = b;
+                b = a % b;
+                a = temp;
+            }
+            return a;
+        }
+        function pailie(){
+            let x = parseInt(document.getElementById("n").value);
+            let y = parseInt(document.getElementById("k").value);
+            let a =calculatePermutation(x,x);
+            let b = Math.floor(y /2);
+            
+            let b1 = calculatePermutation(x+1,y)
+            let bb = b1
+            for(let i =1;i<b+1;i++){
+                let b_ = calculatePermutation(y,2*i)*calculateCombination(x-1,i)*calculatePermutation(x,y-i*2);
+                bb = bb + b_;
+            }    
+            let c = calculatePermutation(x+y,x+y)
+            // 计算分数
+            let numerator = a * bb;
+            let denominator = c;
+
+            // 简化分数
+            let divisor = gcd(numerator, denominator);
+            numerator /= divisor;
+            denominator /= divisor;
+
+            let fraction = `${numerator} / ${denominator}`;
+            document.getElementById("resultFraction").innerText = `${x}名女性，${y}名男性，排成一排，男性身边有女性的概率为 ${fraction}`;
+            
+            
+        }
+    </script>
+</head>
+<body>
+    <h2>排列组合计算器</h2>
+    <label for="n">n：</label>
+    <input type="number" id="n" min="0" />
+    <br />
+    <label for="k">k：</label>
+    <input type="number" id="k" min="0" />
+    <br /><br />
+   
+    <button onclick="pp()">计算排列 P(n, k)</button>
+    <button onclick="cc()">计算组合 C(n, k)</button>
+    <button onclick="pailie()">计算分数</button>
+    
+    <br /><br />
+    <p id="resultP"></p>
+    <p id="resultC"></p>
+    <p id="resultFraction"></p>
+</body>
+</html>

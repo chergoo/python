@@ -11,6 +11,8 @@ class KeyPressApp:
         self.root.attributes("-topmost", True)
         self.root.overrideredirect(True)
 
+        # 设置透明背景（仅Windows支持）
+        self.root.wm_attributes("-transparentcolor", "white")
         self.root.configure(bg="white")
 
         self.pressed_keys = set()
@@ -44,12 +46,12 @@ class KeyPressApp:
         self.current_label = ttk.Label(
             self.text_frame,
             text=" ",
-            font=("Helvetica", 28, "bold"), # 字体可以适当调大一些，因为空间更集中了
-            foreground="black",
+            font=("Comic Sans MS", 28, "bold"), # 字体可以适当调大一些，因为空间更集中了
+            foreground="hot pink",
             background="white"
         )
-        # 使用 grid 布局，并调整 pady 使其垂直居中
-        self.current_label.grid(row=0, column=0, pady=(10, 0), sticky="nsew") # 移除下边距，增加上边距以居中
+        # 使用 grid 布局，并调整 pady 使其垂直居中                                                      
+        self.current_label.grid(row=0, column=0, pady=(0, 0), sticky="nsew") # 移除下边距，增加上边距以居中
 
         # self.previous_label 不再创建
 
@@ -184,7 +186,7 @@ class KeyPressApp:
     def on_mouse_click_pynput(self, x, y, button, pressed):
         button_name = str(button).replace('Button.', '')
 
-        active_color = "#00FF00" # 绿色
+        active_color = "#16B2DA" # 绿色
         inactive_color = "#CCCCCC" # 初始灰色
 
         if button_name == 'left':

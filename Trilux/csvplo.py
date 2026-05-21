@@ -1,5 +1,5 @@
 """
-CSV 多文件数据可视化工具
+CSV 多文件数据可视化工具（支持空白时间段折叠切换）
 依赖: pip install matplotlib pandas
 运行: python csv_plotter.py
 """
@@ -43,12 +43,15 @@ class CSVPlotter(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("CSV 多文件数据可视化")
-        self.geometry("1060x700")
+        self.geometry("1120x700")
         self.configure(bg=PLOT_BG)
         self.minsize(820, 560)
 
         self.files: dict[str, pd.DataFrame] = {}   # name -> dataframe
         self.active_metric = tk.StringVar(value="Chla")
+        
+        # 新增：控制是否隐藏空白时间段的变量
+        self.hide_gaps = tk.BooleanVar(value=True)
 
         self.protocol("WM_DELETE_WINDOW", self._on_close)
         self._build_ui()
@@ -90,12 +93,18 @@ class CSVPlotter(tk.Tk):
             self._metric_btns[m] = b
         self._update_metric_btns()
 
+        # 新增：在指标栏右侧加入“隐藏空白”控制开关
+        gap_ctrl_frame = tk.Frame(metric_bar, bg=PANEL_BG)
+        gap_ctrl_frame.pack(side=tk.RIGHT, padx=5)
+        ttk.Checkbutton(gap_ctrl_frame, text="隐藏/折叠时间空白", variable=self.hide_gaps, 
+                        command=self._refresh_plot).pack(side=tk.RIGHT)
+
         # 文件列表侧边栏 + 图表主区
         body = tk.Frame(self, bg=PLOT_BG)
         body.pack(side=tk.TOP, fill=tk.BOTH, expand=True, padx=10, pady=(6, 0))
 
         # 侧边：已加载文件列表
-        sidebar = tk.Frame(body, bg=PANEL_BG, width=200,
+        sidebar = tk.Frame(body, bg=PANEL_BG, width=220,
                            relief=tk.FLAT, bd=0)
         sidebar.pack(side=tk.LEFT, fill=tk.Y, padx=(0, 8))
         sidebar.pack_propagate(False)
@@ -151,9 +160,7 @@ class CSVPlotter(tk.Tk):
                 continue
             try:
                 df = pd.read_csv(p)
-                # 标准化列名（去除空格）
                 df.columns = [c.strip() for c in df.columns]
-                # 确保有需要的列
                 missing = [m for m in METRICS if m not in df.columns]
                 if missing:
                     messagebox.showwarning("列缺失",
@@ -193,7 +200,7 @@ class CSVPlotter(tk.Tk):
                 b.configure(bg=BTN_NORMAL_BG, fg=BTN_NORMAL_FG,
                              font=("Microsoft YaHei", 9))
 
-    # ── 文件列表刷新 ──────────────────────────────────────────────
+    # ── 文件列表与统计刷新 ──────────────────────────────────────────
     def _refresh_file_list(self):
         for w in self._file_list_frame.winfo_children():
             w.destroy()
@@ -227,7 +234,7 @@ class CSVPlotter(tk.Tk):
                            command=lambda n=name: self._remove_file(n))
             rm.pack(side=tk.RIGHT)
 
-        # 统计
+        # 统计面板
         metric = self.active_metric.get()
         tk.Label(self._stats_frame,
                  text=f"统计 ({metric})",
@@ -271,38 +278,81 @@ class CSVPlotter(tk.Tk):
                 tk.Label(c, text=val, font=("Consolas", 8, "bold"),
                          bg="#FFFFFF", fg=TEXT_COL).pack()
 
-    # ── 时间不连续处理：在跳变点插入 NaN 断开折线 ────────────────
+    # ── 核心逻辑修改：根据开关进行时间线折叠 ───────────────────────────
     @staticmethod
-    def _insert_gaps(x: pd.Series, y: pd.Series, factor: float = 5.0):
+    def _process_time_axis(x: pd.Series, y: pd.Series, factor: float = 5.0, hide_gaps: bool = True):
         """
-        计算相邻时间间隔的中位数，凡超过 factor 倍中位数的间隔
-        视为不连续，在该位置插入 NaT/NaN，使折线自动断开。
+        处理时间不连续断档。
+        如果 hide_gaps=False: 原始逻辑，仅在断档处插入 NaN（保持绝对时间跨度）。
+        如果 hide_gaps=True : 压缩折叠逻辑，计算虚拟累积测量时间（秒），剔除大块空白。
         """
         if len(x) < 2:
-            return x, y
+            return x.values, y.values
+
+        # 计算绝对时间差（秒）
         diffs = x.diff().dt.total_seconds().abs()
         median_diff = diffs.median()
         if median_diff == 0:
-            return x, y
+            median_diff = 1.0  # 防止除以0
+
+        # 判定是否属于不连续跳转的掩码
         gap_mask = diffs > factor * median_diff
         gap_indices = diffs[gap_mask].index
+
+        # 如果没有显著大空白，直接返回原始或相对序列
         if gap_indices.empty:
-            return x, y
+            if hide_gaps:
+                # 即使没有断档，也转换成以第一点为0秒起点的相对时间
+                rel_x = (x - x.iloc[0]).dt.total_seconds()
+                return rel_x.values, y.values
+            return x.values, y.values
 
-        rows_x, rows_y = [], []
-        prev = 0
-        for idx in gap_indices:
-            loc = x.index.get_loc(idx)
-            rows_x.append(x.iloc[prev:loc])
-            rows_y.append(y.iloc[prev:loc])
-            rows_x.append(pd.Series([pd.NaT], dtype=x.dtype))
-            rows_y.append(pd.Series([float("nan")]))
-            prev = loc
-        rows_x.append(x.iloc[prev:])
-        rows_y.append(y.iloc[prev:])
-        return pd.concat(rows_x, ignore_index=True), pd.concat(rows_y, ignore_index=True)
+        if not hide_gaps:
+            # 模式 A：保留物理空白。仅在跳变点插入 NaN 断开连线
+            rows_x, rows_y = [], []
+            prev = 0
+            for idx in gap_indices:
+                loc = x.index.get_loc(idx)
+                rows_x.append(x.iloc[prev:loc])
+                rows_y.append(y.iloc[prev:loc])
+                rows_x.append(pd.Series([pd.NaT], dtype=x.dtype))
+                rows_y.append(pd.Series([float("nan")]))
+                prev = loc
+            rows_x.append(x.iloc[prev:])
+            rows_y.append(y.iloc[prev:])
+            return pd.concat(rows_x, ignore_index=True).values, pd.concat(rows_y, ignore_index=True).values
 
-    # ── 绘图 ─────────────────────────────────────────────────────
+        else:
+            # 模式 B：隐藏/折叠大空白。构建一个“虚拟累计显示时间轴”
+            virtual_x = []
+            virtual_y = []
+            
+            cur_virtual_time = 0.0
+            virtual_x.append(cur_virtual_time)
+            virtual_y.append(y.iloc[0])
+
+            visual_gap = max(2.0, median_diff * 2)  # 折叠处保留的微小视觉间隙大小
+
+            for i in range(1, len(x)):
+                actual_gap = (x.iloc[i] - x.iloc[i-1]).total_seconds()
+                
+                if actual_gap > factor * median_diff:
+                    # 发生大时间断档
+                    # 1. 插入虚拟None断点
+                    virtual_x.append(cur_virtual_time + 0.001)
+                    virtual_y.append(float("nan"))
+                    # 2. 虚拟时间轴只前进一小段视觉微隙
+                    cur_virtual_time += visual_gap
+                else:
+                    # 正常连续采集
+                    cur_virtual_time += actual_gap
+                
+                virtual_x.append(cur_virtual_time)
+                virtual_y.append(y.iloc[i])
+
+            return virtual_x, virtual_y
+
+    # ── 绘图更新 ──────────────────────────────────────────────────
     def _refresh_plot(self):
         ax = self._ax
         ax.clear()
@@ -313,15 +363,19 @@ class CSVPlotter(tk.Tk):
             spine.set_edgecolor("#D1D5DB")
 
         metric = self.active_metric.get()
-        ax.set_title(METRIC_LABELS[metric], fontsize=11,
-                     color=TEXT_COL, pad=10)
-        ax.set_xlabel("时间", fontsize=9, color=TEXT_COL)
+        ax.set_title(METRIC_LABELS[metric], fontsize=11, color=TEXT_COL, pad=10)
+        
+        # 根据开关动态更改 X 轴标签提示
+        if self.hide_gaps.get():
+            ax.set_xlabel("累积有效测量时间 (秒) [已折叠大空白]", fontsize=9, color=TEXT_COL)
+        else:
+            ax.set_xlabel("绝对时间轴 (Timestamp)", fontsize=9, color=TEXT_COL)
+            
         ax.set_ylabel(metric, fontsize=9, color=TEXT_COL)
 
         if not self.files:
             ax.text(0.5, 0.5, "请添加 CSV 文件", transform=ax.transAxes,
-                    ha="center", va="center", fontsize=13,
-                    color="#9CA3AF")
+                    ha="center", va="center", fontsize=13, color="#9CA3AF")
             self._canvas.draw()
             return
 
@@ -334,22 +388,28 @@ class CSVPlotter(tk.Tk):
             if "Timestamp" in df.columns:
                 try:
                     x = pd.to_datetime(df["Timestamp"])
-                    x, y = self._insert_gaps(x, y)
-                    ax.plot(x, y, color=color, linewidth=1.4, label=label)
-                    has_datetime = True
+                    # 调用更新后的核心处理逻辑
+                    x_plot, y_plot = self._process_time_axis(x, y, factor=5.0, hide_gaps=self.hide_gaps.get())
+                    ax.plot(x_plot, y_plot, color=color, linewidth=1.4, label=label)
+                    
+                    if not self.hide_gaps.get():
+                        has_datetime = True
                     continue
-                except Exception:
+                except Exception as e:
+                    print(f"解析时间列失败: {e}")
                     pass
-            # 回退：行索引
+            
+            # 回退：如果没有时间列，按行索引画图
             ax.plot(y.values, color=color, linewidth=1.4, label=label)
 
         if has_datetime:
             self._fig.autofmt_xdate(rotation=30)
-        ax.legend(fontsize=8, framealpha=0.9, edgecolor="#E5E7EB",
-                  loc="upper right")
+            
+        ax.legend(fontsize=8, framealpha=0.9, edgecolor="#E5E7EB", loc="upper right")
         self._fig.tight_layout()
         self._canvas.draw()
         self._refresh_file_list()
+
 
 def resource_path(relative_path):
     try:
@@ -363,7 +423,7 @@ def main():
     try:
         app.iconbitmap(resource_path('icon.ico'))
     except Exception:
-        pass  # 如果找不到文件，忽略
+        pass
     app.mainloop()
        
 if __name__ == "__main__":

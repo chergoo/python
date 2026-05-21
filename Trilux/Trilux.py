@@ -25,7 +25,7 @@ MAX_DISPLAY_POINTS = 500      # 曲线最多显示点数
 BAUDRATE = 9600               # 固定波特率
 DATA_TIMEOUT = 1              # 串口读超时(秒)
 DEFAULT_GAP_THRESHOLD = 5.0   # 默认不连续阈值（秒）
-VISUAL_GAP = 0.5              # 折叠后，两段曲线之间保留的视觉间隙（秒），设为0则完全无缝拼接
+VISUAL_GAP = 1.0              # 折叠后，两段曲线之间保留的视觉间隙（秒）
 
 class SerialDataPlotter:
     """串口数据实时曲线显示与存储上位机"""
@@ -42,7 +42,7 @@ class SerialDataPlotter:
         self.data_queue = queue.Queue()   # 数据队列(主线程消费)
 
         # 数据存储(用于曲线显示)
-        self.time_data = []          # X轴显示相对时间(秒) —— 已引入空白折叠
+        self.time_data = []          # X轴虚拟显示相对时间(秒) —— 默认折叠
         self.chla_data = []          # 叶绿素
         self.turb_data = []          # 浊度
         self.phyco_data = []         # 藻红蛋白
@@ -51,12 +51,19 @@ class SerialDataPlotter:
         self.last_recv_time = None   # 上一次收到数据点的绝对时间
         self.current_display_time = 0.0 # 当前X轴的虚拟累计显示时间
 
+        # 存储动态创建的断档标注对象（用于控制隐藏和擦除）
+        self.gap_lines = []          # 存储垂直虚线对象
+        self.gap_texts = []          # 存储文本标签对象
+
         # 曲线显示控制
         self.show_chla = tk.BooleanVar(value=True)
         self.show_turb = tk.BooleanVar(value=True)
         self.show_phyco = tk.BooleanVar(value=True)
+        
+        # 新增：是否显示暂停时间标识（默认开启）
+        self.show_gap_time = tk.BooleanVar(value=True)
 
-        # 间断阈值（秒），用户可调节
+        # 间断判定阈值（秒）
         self.discont_threshold = tk.DoubleVar(value=DEFAULT_GAP_THRESHOLD)
 
         # 文件存储
@@ -102,7 +109,7 @@ class SerialDataPlotter:
         self.status_label = ttk.Label(control_frame, text="状态: 未连接", foreground="red")
         self.status_label.grid(row=0, column=7, padx=10)
 
-        # ---- 间断阈值设置 ----
+        # 间断阈值设置
         threshold_frame = ttk.Frame(control_frame)
         threshold_frame.grid(row=0, column=8, padx=10)
         ttk.Label(threshold_frame, text="时间断档判定(秒):").pack(side=tk.LEFT)
@@ -126,12 +133,15 @@ class SerialDataPlotter:
         self.file_label = ttk.Label(value_frame, text="未记录文件", foreground="gray")
         self.file_label.pack(side=tk.RIGHT, padx=10)
 
-        # 曲线显示控制
-        curve_ctrl_frame = ttk.LabelFrame(main_frame, text="曲线显示", padding="5")
+        # 曲线显示控制区域
+        curve_ctrl_frame = ttk.LabelFrame(main_frame, text="曲线显示控制", padding="5")
         curve_ctrl_frame.pack(fill=tk.X, pady=(0,5))
         ttk.Checkbutton(curve_ctrl_frame, text="显示叶绿素", variable=self.show_chla, command=self.update_plot).pack(side=tk.LEFT, padx=10)
         ttk.Checkbutton(curve_ctrl_frame, text="显示浊度", variable=self.show_turb, command=self.update_plot).pack(side=tk.LEFT, padx=10)
         ttk.Checkbutton(curve_ctrl_frame, text="显示藻红蛋白", variable=self.show_phyco, command=self.update_plot).pack(side=tk.LEFT, padx=10)
+        
+        # 新增：控制是否显示暂停时间的复选框
+        ttk.Checkbutton(curve_ctrl_frame, text="显示暂停时间", variable=self.show_gap_time, command=self.update_plot).pack(side=tk.RIGHT, padx=15)
 
         # 曲线显示区域
         plot_frame = ttk.Frame(main_frame)
@@ -144,8 +154,8 @@ class SerialDataPlotter:
         self.refresh_ports()
 
     def init_plot(self):
-        """初始化曲线样式、标签等"""
-        self.ax.set_title("实时水质参数曲线 (长空白已自动折叠)", fontsize=12)
+        """初始化曲线样式"""
+        self.ax.set_title("实时水质参数监测 (长空白已自动折叠)", fontsize=12)
         self.ax.set_xlabel("累积测量有效时间 (秒)", fontsize=10)
         self.ax.set_ylabel("数值", fontsize=10)
         self.ax.grid(True, linestyle='--', alpha=0.6)
@@ -163,7 +173,6 @@ class SerialDataPlotter:
             self.port_combo.current(0)
 
     def open_serial(self):
-        """打开串口，启动读取线程和记录文件"""
         port = self.port_combo.get()
         if not port:
             messagebox.showerror("错误", "请选择一个串口号")
@@ -193,6 +202,7 @@ class SerialDataPlotter:
             
             self.last_recv_time = None
             self.current_display_time = 0.0
+            self._clear_annotations()  # 清除旧图表残留的标注
 
             self.update_plot()
 
@@ -203,9 +213,6 @@ class SerialDataPlotter:
             self.open_btn.config(state=tk.DISABLED)
             self.close_btn.config(state=tk.NORMAL)
             self.status_label.config(text=f"状态: 已连接 {port}", foreground="green")
-            self.chla_var.set("叶绿素: --")
-            self.turb_var.set("浊度: --")
-            self.phyco_var.set("藻红蛋白: --")
 
         except Exception as e:
             messagebox.showerror("串口打开失败", f"无法打开串口 {port}\n错误: {str(e)}")
@@ -232,61 +239,81 @@ class SerialDataPlotter:
             parts = s.replace(',', ' ').split()
             if len(parts) < 3:
                 return None
+            # 已修复之前遗留的语法错误
             return (float(parts[0]), float(parts[1]), float(parts[2]))
         except Exception:
             return None
 
     def process_queue(self):
-        """核心修改：处理队列，支持长空白时间段折叠"""
+        """核心逻辑：处理队列，计算虚拟X轴，并按需添加精简标注"""
         try:
             while True:
                 data = self.data_queue.get_nowait()
                 recv_time, chla, turb, phyco = data
 
-                # ========== 存储到CSV文件（始终记录真实绝对时间戳） ==========
                 if self.csv_writer:
                     time_str = recv_time.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
                     self.csv_writer.writerow([time_str, chla, turb, phyco])
                     self.csv_file.flush()
 
-                # ========== 更新显示的最新数值 ==========
                 self.chla_var.set(f"叶绿素: {chla:.3f}")
                 self.turb_var.set(f"浊度: {turb:.3f}")
                 self.phyco_var.set(f"藻红蛋白: {phyco:.3f}")
 
-                # ========== 关键逻辑：计算虚拟X轴坐标（折叠空白） ==========
+                # 计算虚拟 X 轴
                 if self.last_recv_time is None:
-                    # 整个运行周期接收到的第一个有效点
                     self.current_display_time = 0.0
                 else:
-                    # 计算当前点与上一个有效点的真实时间差
                     actual_gap = (recv_time - self.last_recv_time).total_seconds()
                     threshold = self.discont_threshold.get()
 
                     if actual_gap > threshold:
-                        # 判定发生长时间中断（例如停止了10分钟）
-                        # 1. 插入 None 虚拟断点，使 Matplotlib 在此处断开线条不连线
+                        # 1. 插入 None 断点
                         self.time_data.append(self.current_display_time + 0.001)
                         self.chla_data.append(None)
                         self.turb_data.append(None)
                         self.phyco_data.append(None)
 
-                        # 2. 虚拟X轴只前进一个很小的视觉间隙(如0.5秒)，而不是加上10分钟
+                        # 计算断开的确切时间，并转换为短字符串（如 10m0s 或 45s）
+                        gap_min, gap_sec = divmod(int(actual_gap), 60)
+                        if gap_min > 0:
+                            gap_text = f"{gap_min}m{gap_sec}s"
+                        else:
+                            gap_text = f"{gap_sec}s"
+
+                        # 2. 在画布断裂中央位置初始化垂直标识虚线
+                        mid_x = self.current_display_time + (VISUAL_GAP / 2)
+                        v_line = self.ax.axvline(x=mid_x, color='#999999', linestyle=':', linewidth=1.0)
+                        
+                        # 3. 初始化精简文本标签（固定在图表顶部附近 0.94 处）
+                        t_anno = self.ax.text(
+                            x=mid_x, y=0.94, s=gap_text, color='#666666', fontsize=8,
+                            horizontalalignment='center', verticalalignment='center',
+                            transform=self.ax.get_xaxis_transform(),
+                            bbox=dict(facecolor='#FFFFFF', alpha=0.8, edgecolor='#DDDDDD', boxstyle='round,pad=0.15')
+                        )
+                        
+                        # 根据当前的勾选状态设定初始可见性
+                        v_line.set_visible(self.show_gap_time.get())
+                        t_anno.set_visible(self.show_gap_time.get())
+
+                        # 分别存入列表
+                        self.gap_lines.append(v_line)
+                        self.gap_texts.append(t_anno)
+
+                        # 4. 虚拟时间轴向前推移一个固定视觉间隙
                         self.current_display_time += VISUAL_GAP
                     else:
-                        # 正常连续采集，虚拟时间轴累加实际流逝的采样间隔
                         self.current_display_time += actual_gap
 
-                # 更新最后接收时间戳
                 self.last_recv_time = recv_time
 
-                # 添加真实数据点到显示缓冲
+                # 将数据加入显示队列
                 self.time_data.append(self.current_display_time)
                 self.chla_data.append(chla)
                 self.turb_data.append(turb)
                 self.phyco_data.append(phyco)
 
-                # 限制显示点数以提高渲染性能
                 if len(self.time_data) > MAX_DISPLAY_POINTS:
                     self.time_data = self.time_data[-MAX_DISPLAY_POINTS:]
                     self.chla_data = self.chla_data[-MAX_DISPLAY_POINTS:]
@@ -300,6 +327,14 @@ class SerialDataPlotter:
         self.root.after(50, self.process_queue)
 
     def update_plot(self):
+        """刷新图表（包括动态控制暂停标注的显示与隐藏）"""
+        # 实时更新所有的暂停标识和虚线的可见性
+        is_visible = self.show_gap_time.get()
+        for line in self.gap_lines:
+            line.set_visible(is_visible)
+        for txt in self.gap_texts:
+            txt.set_visible(is_visible)
+
         if not self.time_data:
             self.line_chla.set_data([], [])
             self.line_turb.set_data([], [])
@@ -326,8 +361,7 @@ class SerialDataPlotter:
             if self.show_phyco.get():
                 all_vals += [v for v in self.phyco_data if v is not None]
 
-            x_min = min(self.time_data)
-            x_max = max(self.time_data)
+            x_min, x_max = min(self.time_data), max(self.time_data)
             x_pad = 0.1 if x_min == x_max else max(0.1, (x_max - x_min) * 0.05)
             self.ax.set_xlim(x_min - x_pad, x_max + x_pad)
 
@@ -338,16 +372,28 @@ class SerialDataPlotter:
 
         self.canvas.draw_idle()
 
+    def _clear_annotations(self):
+        """彻底移除图表上的所有标注对象"""
+        for line in self.gap_lines:
+            try: line.remove()
+            except: pass
+        for txt in self.gap_texts:
+            try: txt.remove()
+            except: pass
+        self.gap_lines.clear()
+        self.gap_texts.clear()
+
     def clear_curve(self):
-        """清空当前显示的曲线和历史数据"""
+        """清空当前显示的曲线、历史数据和标注"""
         self.time_data.clear()
         self.chla_data.clear()
         self.turb_data.clear()
         self.phyco_data.clear()
         
-        # 清空时重置追踪状态
         self.last_recv_time = None
         self.current_display_time = 0.0
+        
+        self._clear_annotations() # 清空残留标注
         
         self.update_plot()
         self.status_label.config(text="状态: 曲线已清空", foreground="orange")

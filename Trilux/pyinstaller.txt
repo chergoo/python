@@ -1,0 +1,1 @@
+pyinstaller --onefile --noconsole --icon=icon.ico --exclude PyQt5 --add-data "icon.ico;." --version-file version_info.txt Trilux.py

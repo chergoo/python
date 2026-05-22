@@ -50,6 +50,7 @@ class SerialDataPlotter:
         # 内部时间追踪变量
         self.last_recv_time = None   # 上一次收到数据点的绝对时间
         self.current_display_time = 0.0 # 当前X轴的虚拟累计显示时间
+        self.last_measurement_time = None  # 最近一次成功收到数据的真实时间（用于空白时显示）
 
         # 存储动态创建的断档标注对象（用于控制隐藏和擦除）
         self.gap_lines = []          # 存储垂直虚线对象
@@ -83,6 +84,8 @@ class SerialDataPlotter:
 
         # 启动定时器检查数据队列(每50ms)
         self.root.after(50, self.process_queue)
+        # 启动空闲时间刷新定时器(每秒更新上次测量时间显示)
+        self.root.after(1000, self.update_idle_display)
 
     def create_widgets(self):
         """创建控制面板和显示区域"""
@@ -133,6 +136,12 @@ class SerialDataPlotter:
         ttk.Label(value_frame, textvariable=self.chla_var, font=('Arial', 10)).pack(side=tk.LEFT, padx=15)
         ttk.Label(value_frame, textvariable=self.turb_var, font=('Arial', 10)).pack(side=tk.LEFT, padx=15)
         ttk.Label(value_frame, textvariable=self.phyco_var, font=('Arial', 10)).pack(side=tk.LEFT, padx=15)
+
+        # 上次测量时间标签（空白时显示）
+        self.last_time_var = tk.StringVar(value="上次测量: --")
+        self.last_time_label = ttk.Label(value_frame, textvariable=self.last_time_var,
+                                         font=('Arial', 10), foreground="gray")
+        self.last_time_label.pack(side=tk.LEFT, padx=20)
 
         self.file_label = ttk.Label(value_frame, text="未记录文件", foreground="gray")
         self.file_label.pack(side=tk.RIGHT, padx=10)
@@ -286,6 +295,10 @@ class SerialDataPlotter:
                 self.turb_var.set(f"浊度: {turb:.3f}")
                 self.phyco_var.set(f"藻红蛋白: {phyco:.3f}")
 
+                # 记录本次测量的真实时间
+                self.last_measurement_time = recv_time
+                self.last_time_label.config(foreground="gray")
+
                 # 计算虚拟 X 轴
                 if self.last_recv_time is None:
                     self.current_display_time = 0.0
@@ -345,6 +358,36 @@ class SerialDataPlotter:
         except queue.Empty:
             pass
         self.root.after(50, self.process_queue)
+
+    def update_idle_display(self):
+        """每秒刷新一次"上次测量时间"标签，空白时显示距上次的间隔"""
+        if self.last_measurement_time is not None:
+            time_str = self.last_measurement_time.strftime("%H:%M:%S")
+            elapsed = (datetime.now() - self.last_measurement_time).total_seconds()
+
+            # 串口正在接收数据时（间隔 < 阈值），标签显示为灰色普通文字
+            # 超过阈值视为空白，用橙色突出显示距上次的秒数
+            threshold = self.discont_threshold.get()
+            if elapsed < threshold:
+                self.last_time_var.set(f"上次测量: {time_str}")
+                self.last_time_label.config(foreground="gray")
+            else:
+                # 将间隔格式化为可读字符串
+                idle_min, idle_sec = divmod(int(elapsed), 60)
+                idle_hour, idle_min = divmod(idle_min, 60)
+                if idle_hour > 0:
+                    idle_str = f"{idle_hour}h{idle_min}m{idle_sec}s"
+                elif idle_min > 0:
+                    idle_str = f"{idle_min}m{idle_sec}s"
+                else:
+                    idle_str = f"{idle_sec}s"
+                self.last_time_var.set(f"上次测量: {time_str}  (已空闲 {idle_str})")
+                self.last_time_label.config(foreground="orange")
+        else:
+            self.last_time_var.set("上次测量: --")
+            self.last_time_label.config(foreground="gray")
+
+        self.root.after(1000, self.update_idle_display)
 
     def on_follow_toggle(self):
         """切换"跟随最新数据"模式"""
@@ -456,6 +499,9 @@ class SerialDataPlotter:
         
         self.last_recv_time = None
         self.current_display_time = 0.0
+        self.last_measurement_time = None
+        self.last_time_var.set("上次测量: --")
+        self.last_time_label.config(foreground="gray")
         
         self._clear_annotations() # 清空残留标注
         

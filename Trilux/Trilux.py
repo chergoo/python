@@ -21,7 +21,7 @@ plt.rcParams['font.sans-serif'] = ['SimHei', 'Microsoft YaHei', 'WenQuanYi Zen H
 plt.rcParams['axes.unicode_minus'] = False
 
 # 配置常量
-MAX_DISPLAY_POINTS = 500      # 曲线最多显示点数
+MAX_DISPLAY_POINTS = 500      # 单次视窗最多显示点数（不再裁剪历史数据）
 BAUDRATE = 9600               # 固定波特率
 DATA_TIMEOUT = 1              # 串口读超时(秒)
 DEFAULT_GAP_THRESHOLD = 5.0   # 默认不连续阈值（秒）
@@ -62,6 +62,10 @@ class SerialDataPlotter:
         
         # 新增：是否显示暂停时间标识（默认开启）
         self.show_gap_time = tk.BooleanVar(value=True)
+
+        # 历史回溯：跟随最新 & 滑块（在 create_widgets 中创建控件）
+        self.follow_latest = None   # BooleanVar，create_widgets 中初始化
+        self.slider_var = None      # IntVar，create_widgets 中初始化
 
         # 间断判定阈值（秒）
         self.discont_threshold = tk.DoubleVar(value=DEFAULT_GAP_THRESHOLD)
@@ -150,6 +154,28 @@ class SerialDataPlotter:
         self.ax = self.figure.add_subplot(111)
         self.canvas = FigureCanvasTkAgg(self.figure, master=plot_frame)
         self.canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+
+        # ---- 历史回溯导航栏 ----
+        nav_frame = ttk.Frame(main_frame)
+        nav_frame.pack(fill=tk.X, pady=(2, 0))
+
+        self.follow_latest = tk.BooleanVar(value=True)
+        ttk.Checkbutton(
+            nav_frame, text="📌 跟随最新数据",
+            variable=self.follow_latest, command=self.on_follow_toggle
+        ).pack(side=tk.LEFT, padx=8)
+
+        ttk.Label(nav_frame, text="历史回溯:").pack(side=tk.LEFT, padx=(10, 2))
+        self.slider_var = tk.IntVar(value=0)
+        self.x_slider = ttk.Scale(
+            nav_frame, from_=0, to=0, orient=tk.HORIZONTAL,
+            variable=self.slider_var, command=self.on_slider_move
+        )
+        self.x_slider.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=8)
+        self.x_slider.state(['disabled'])   # 初始跟随最新时禁用滑块
+
+        self.slider_pos_label = ttk.Label(nav_frame, text="显示: 最新数据", width=22)
+        self.slider_pos_label.pack(side=tk.LEFT, padx=5)
 
         self.refresh_ports()
 
@@ -314,28 +340,38 @@ class SerialDataPlotter:
                 self.turb_data.append(turb)
                 self.phyco_data.append(phyco)
 
-                if len(self.time_data) > MAX_DISPLAY_POINTS:
-                    self.time_data = self.time_data[-MAX_DISPLAY_POINTS:]
-                    self.chla_data = self.chla_data[-MAX_DISPLAY_POINTS:]
-                    self.turb_data = self.turb_data[-MAX_DISPLAY_POINTS:]
-                    self.phyco_data = self.phyco_data[-MAX_DISPLAY_POINTS:]
-
                 self.update_plot()
 
         except queue.Empty:
             pass
         self.root.after(50, self.process_queue)
 
+    def on_follow_toggle(self):
+        """切换"跟随最新数据"模式"""
+        if self.follow_latest.get():
+            self.x_slider.state(['disabled'])
+            self.slider_pos_label.config(text="显示: 最新数据")
+        else:
+            self.x_slider.state(['!disabled'])
+        self.update_plot()
+
+    def on_slider_move(self, _=None):
+        """滑块拖动时刷新视图"""
+        if not self.follow_latest.get():
+            self.update_plot()
+
     def update_plot(self):
-        """刷新图表（包括动态控制暂停标注的显示与隐藏）"""
-        # 实时更新所有的暂停标识和虚线的可见性
+        """刷新图表：根据滑块/跟随模式选取显示窗口"""
+        # 同步所有暂停标注的可见性
         is_visible = self.show_gap_time.get()
         for line in self.gap_lines:
             line.set_visible(is_visible)
         for txt in self.gap_texts:
             txt.set_visible(is_visible)
 
-        if not self.time_data:
+        total = len(self.time_data)
+
+        if total == 0:
             self.line_chla.set_data([], [])
             self.line_turb.set_data([], [])
             self.line_phyco.set_data([], [])
@@ -344,24 +380,52 @@ class SerialDataPlotter:
             self.canvas.draw_idle()
             return
 
-        self.line_chla.set_data(self.time_data, self.chla_data)
-        self.line_turb.set_data(self.time_data, self.turb_data)
-        self.line_phyco.set_data(self.time_data, self.phyco_data)
+        # 更新滑块范围
+        max_start = max(0, total - MAX_DISPLAY_POINTS)
+        self.x_slider.config(to=max_start)
+
+        # 确定视窗起点
+        if self.follow_latest.get():
+            start_idx = max_start
+            self.slider_var.set(start_idx)
+        else:
+            start_idx = min(int(self.slider_var.get()), max_start)
+
+        end_idx = min(total, start_idx + MAX_DISPLAY_POINTS)
+
+        # 切片显示数据
+        t_view    = self.time_data[start_idx:end_idx]
+        chla_view = self.chla_data[start_idx:end_idx]
+        turb_view = self.turb_data[start_idx:end_idx]
+        phyco_view = self.phyco_data[start_idx:end_idx]
+
+        # 更新滑块位置标签
+        if self.follow_latest.get():
+            self.slider_pos_label.config(text="显示: 最新数据")
+        else:
+            pct = int(start_idx / max_start * 100) if max_start > 0 else 100
+            self.slider_pos_label.config(
+                text=f"第{start_idx+1}~{end_idx}点 ({pct}%)"
+            )
+
+        self.line_chla.set_data(t_view, chla_view)
+        self.line_turb.set_data(t_view, turb_view)
+        self.line_phyco.set_data(t_view, phyco_view)
 
         self.line_chla.set_visible(self.show_chla.get())
         self.line_turb.set_visible(self.show_turb.get())
         self.line_phyco.set_visible(self.show_phyco.get())
 
-        if self.time_data:
+        if t_view:
             all_vals = []
             if self.show_chla.get():
-                all_vals += [v for v in self.chla_data if v is not None]
+                all_vals += [v for v in chla_view if v is not None]
             if self.show_turb.get():
-                all_vals += [v for v in self.turb_data if v is not None]
+                all_vals += [v for v in turb_view if v is not None]
             if self.show_phyco.get():
-                all_vals += [v for v in self.phyco_data if v is not None]
+                all_vals += [v for v in phyco_view if v is not None]
 
-            x_min, x_max = min(self.time_data), max(self.time_data)
+            x_min, x_max = min(t_view), max(t_view)
             x_pad = 0.1 if x_min == x_max else max(0.1, (x_max - x_min) * 0.05)
             self.ax.set_xlim(x_min - x_pad, x_max + x_pad)
 

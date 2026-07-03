@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>随机选股 · A股行情抽签器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<style>
+  :root{
+    --bg: #0b0e14;
+    --panel: #10151f;
+    --panel-2: #151b28;
+    --line: #232b3a;
+    --gold: #c9a227;
+    --text: #e8e6e1;
+    --text-dim: #8a93a6;
+    --up: #e5484d;      /* 中国股市：红涨 */
+    --down: #10b981;    /* 中国股市：绿跌 */
+    --mono: 'Roboto Mono', 'SFMono-Regular', Consolas, monospace;
+    --sans: 'Noto Sans SC', -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html,body{
+    margin:0; padding:0; min-height:100vh;
+    background:
+      radial-gradient(circle at 20% -10%, rgba(201,162,39,0.08), transparent 40%),
+      radial-gradient(circle at 90% 10%, rgba(16,185,129,0.06), transparent 40%),
+      var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+  }
+  .wrap{
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 20px 80px;
+  }
+  header{
+    text-align:center;
+    margin-bottom: 36px;
+  }
+  .eyebrow{
+    font-family: var(--mono);
+    letter-spacing: 0.3em;
+    font-size: 12px;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+  h1{
+    font-size: 28px;
+    margin: 10px 0 6px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .sub{
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+
+  .board{
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 32px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+  .board::before{
+    content:"";
+    position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg, var(--gold), transparent 60%);
+  }
+
+  .code-row{
+    display:flex;
+    justify-content:center;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .digit{
+    width: 44px; height: 60px;
+    background: #06080d;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--mono);
+    font-size: 30px;
+    font-weight: 700;
+    color: var(--gold);
+    position: relative;
+  }
+  .digit.spin{ color: var(--text-dim); animation: flick 0.06s linear infinite; }
+  @keyframes flick{
+    0%{ transform: translateY(-1px); }
+    50%{ transform: translateY(1px); }
+    100%{ transform: translateY(-1px); }
+  }
+  .exch-tag{
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align:center;
+    margin-bottom: 26px;
+    letter-spacing: 0.15em;
+  }
+  .exch-tag span{ color: var(--gold); }
+
+  .name-row{
+    text-align:center;
+    margin-bottom: 24px;
+  }
+  .stock-name{
+    font-size: 22px;
+    font-weight: 700;
+  }
+  .board-tag{
+    display:inline-block;
+    margin-top:6px;
+    font-size: 11px;
+    padding: 2px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--text-dim);
+  }
+
+  .price-row{
+    display:flex;
+    align-items:baseline;
+    justify-content:center;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+  .price{
+    font-family: var(--mono);
+    font-size: 44px;
+    font-weight: 700;
+  }
+  .price.up{ color: var(--up); }
+  .price.down{ color: var(--down); }
+  .change{
+    font-family: var(--mono);
+    font-size: 16px;
+  }
+  .change.up{ color: var(--up); }
+  .change.down{ color: var(--down); }
+
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 28px;
+  }
+  .cell{
+    background: var(--panel);
+    padding: 14px 10px;
+    text-align:center;
+  }
+  .cell .label{
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-bottom: 6px;
+  }
+  .cell .value{
+    font-family: var(--mono);
+    font-size: 15px;
+    font-weight: 600;
+  }
+
+  .actions{
+    display:flex;
+    gap: 12px;
+    justify-content:center;
+  }
+  button{
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 700;
+    padding: 13px 26px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+  }
+  button:active{ transform: scale(0.97); }
+  #drawBtn{
+    background: var(--up);
+    color: #fff;
+    box-shadow: 0 6px 20px rgba(229,72,77,0.35);
+  }
+  #drawBtn:hover{ opacity: 0.92; }
+  #refreshBtn{
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--line);
+  }
+  #refreshBtn:hover{ color: var(--text); border-color: var(--text-dim); }
+
+  .meta{
+    text-align:center;
+    margin-top: 18px;
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: var(--mono);
+  }
+  .placeholder-hint{
+    text-align:center;
+    color: var(--text-dim);
+    font-size: 13px;
+    margin-top: 16px;
+  }
+
+  @media (max-width: 480px){
+    .digit{ width: 34px; height: 48px; font-size: 22px; }
+    .price{ font-size: 34px; }
+    .grid{ grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">RANDOM A-SHARE PICKER</div>
+    <h1>A股随机抽签器</h1>
+    <div class="sub">点击抽取，随机呈现一只A股的代码与实时行情</div>
+  </header>
+
+  <div class="board">
+    <div class="code-row" id="codeRow">
+      <div class="digit">-</div>
+      <div class="digit">-</div>
+      <div class="digit">-</div>
+      <div class="digit">-</div>
+      <div class="digit">-</div>
+      <div class="digit">-</div>
+    </div>
+    <div class="exch-tag" id="exchTag">交易所 · <span>--</span></div>
+
+    <div class="name-row">
+      <div class="stock-name" id="stockName">点击下方按钮开始抽取</div>
+      <span class="board-tag" id="boardTag">--</span>
+    </div>
+
+    <div class="price-row">
+      <div class="price" id="price">--.--</div>
+      <div class="change" id="change">-- (--%)</div>
+    </div>
+
+    <div class="grid" id="grid">
+      <div class="cell"><div class="label">今开</div><div class="value" id="v_open">--</div></div>
+      <div class="cell"><div class="label">最高</div><div class="value" id="v_high">--</div></div>
+      <div class="cell"><div class="label">最低</div><div class="value" id="v_low">--</div></div>
+      <div class="cell"><div class="label">昨收</div><div class="value" id="v_prev">--</div></div>
+      <div class="cell"><div class="label">成交量(手)</div><div class="value" id="v_vol">--</div></div>
+      <div class="cell"><div class="label">成交额</div><div class="value" id="v_turnover">--</div></div>
+      <div class="cell"><div class="label">总市值</div><div class="value" id="v_cap">--</div></div>
+      <div class="cell"><div class="label">市盈率</div><div class="value" id="v_pe">--</div></div>
+      <div class="cell"><div class="label">换手率</div><div class="value" id="v_turnrate">--</div></div>
+    </div>
+
+    <div class="actions">
+      <button id="drawBtn">🎲 随机抽取</button>
+      <button id="refreshBtn">刷新行情源</button>
+    </div>
+
+    <div class="meta" id="metaInfo">尚未加载行情数据源</div>
+  </div>
+
+  <div class="placeholder-hint">数据源：akshare 全市场实时行情快照。纯真实数据校验，拒绝离线模拟数据。</div>
+</div>
+
+<script>
+const codeRow = document.getElementById('codeRow');
+const drawBtn = document.getElementById('drawBtn');
+const refreshBtn = document.getElementById('refreshBtn');
+
+function fmtNum(n, digits=2){
+  if (n === undefined || n === null || n === '' || isNaN(n)) return '--';
+  return Number(n).toLocaleString('zh-CN', {maximumFractionDigits: digits, minimumFractionDigits: 0});
+}
+
+function fmtMoney(n){
+  if (n === undefined || n === null || isNaN(n)) return '--';
+  n = Number(n);
+  if (Math.abs(n) >= 1e8) return (n/1e8).toFixed(2) + '亿';
+  if (Math.abs(n) >= 1e4) return (n/1e4).toFixed(2) + '万';
+  return fmtNum(n);
+}
+
+function spinDigits(finalCode, durationMs){
+  return new Promise(resolve => {
+    const digits = codeRow.querySelectorAll('.digit');
+    digits.forEach(d => d.classList.add('spin'));
+    const interval = setInterval(() => {
+      digits.forEach(d => { d.textContent = Math.floor(Math.random()*10); });
+    }, 45);
+    setTimeout(() => {
+      clearInterval(interval);
+      const chars = String(finalCode).padStart(6, '0').split('');
+      digits.forEach((d, i) => {
+        d.classList.remove('spin');
+        d.textContent = chars[i] ?? '0';
+      });
+      resolve();
+    }, durationMs);
+  });
+}
+
+async function draw(){
+  drawBtn.disabled = true;
+  refreshBtn.disabled = true;
+  await spinDigits('000000', 650);
+
+  try{
+    const res = await fetch('/api/random');
+    const data = await res.json();
+    
+    // 如果后端返回错误状态码（如 503 真实数据拉取失败）
+    if (!res.ok) {
+      document.getElementById('stockName').textContent = '数据获取失败';
+      document.getElementById('metaInfo').textContent = data.error || '后端服务异常';
+      await spinDigits('------', 100);
+      return;
+    }
+
+    const s = data.stock;
+    const meta = data.meta;
+
+    await spinDigits(s.code, 250);
+
+    document.getElementById('exchTag').innerHTML = '交易所 · <span>' + s.exchange + '</span>';
+    document.getElementById('stockName').textContent = s.name || '--';
+    document.getElementById('boardTag').textContent = s.board || '--';
+
+    const priceEl = document.getElementById('price');
+    const changeEl = document.getElementById('change');
+    const up = (s.change_pct ?? 0) >= 0;
+    priceEl.textContent = fmtNum(s.price);
+    priceEl.className = 'price ' + (up ? 'up' : 'down');
+    changeEl.textContent = (up ? '+' : '') + fmtNum(s.change_amt) + '  (' + (up ? '+' : '') + fmtNum(s.change_pct) + '%)';
+    changeEl.className = 'change ' + (up ? 'up' : 'down');
+
+    document.getElementById('v_open').textContent = fmtNum(s.open);
+    document.getElementById('v_high').textContent = fmtNum(s.high);
+    document.getElementById('v_low').textContent = fmtNum(s.low);
+    document.getElementById('v_prev').textContent = fmtNum(s.prev_close);
+    document.getElementById('v_vol').textContent = fmtNum(s.volume, 0);
+    document.getElementById('v_turnover').textContent = fmtMoney(s.turnover);
+    document.getElementById('v_cap').textContent = fmtMoney(s.market_cap);
+    document.getElementById('v_pe').textContent = fmtNum(s.pe_ratio);
+    document.getElementById('v_turnrate').textContent = fmtNum(s.turnover_rate) + '%';
+
+    document.getElementById('metaInfo').textContent =
+      '数据源：akshare 实时快照' + (meta.updated_at ? (' · 更新于 ' + meta.updated_at) : '');
+      
+    if (meta.error) {
+      document.getElementById('metaInfo').textContent += ' (注意：当前快照可能非最新，错误：' + meta.error + ')';
+    }
+  } catch (err){
+    document.getElementById('stockName').textContent = '请求失败，请检查后端服务';
+    document.getElementById('metaInfo').textContent = String(err);
+  } finally {
+    drawBtn.disabled = false;
+    refreshBtn.disabled = false;
+  }
+}
+
+async function refreshSource(){
+  refreshBtn.disabled = true;
+  refreshBtn.textContent = '刷新中...';
+  try{
+    const res = await fetch('/api/refresh', {method:'POST'});
+    const data = await res.json();
+    
+    if (data.success) {
+      document.getElementById('metaInfo').textContent = '实时行情已刷新，共 ' + data.count + ' 只股票 · ' + (data.updated_at || '');
+    } else {
+      document.getElementById('metaInfo').textContent = '刷新失败：' + (data.error || '未成功拉取行情');
+    }
+  } catch(err){
+    document.getElementById('metaInfo').textContent = '强制刷新失败：' + String(err);
+  } finally {
+    refreshBtn.disabled = false;
+    refreshBtn.textContent = '刷新行情源';
+  }
+}
+
+drawBtn.addEventListener('click', draw);
+refreshBtn.addEventListener('click', refreshSource);
+</script>
+</body>
+</html>

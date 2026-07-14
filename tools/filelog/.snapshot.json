@@ -1,0 +1,127 @@
+{
+  "filelog.exe": {
+    "type": "file",
+    "mtime": 1784016300.4815874,
+    "size": 11022765
+  },
+  "filelog.py": {
+    "type": "file",
+    "mtime": 1784016252.0098953,
+    "size": 5601
+  },
+  "filelog.spec": {
+    "type": "file",
+    "mtime": 1784016291.47266,
+    "size": 708
+  },
+  "build": {
+    "type": "dir",
+    "mtime": 0,
+    "size": 0
+  },
+  "dist": {
+    "type": "dir",
+    "mtime": 0,
+    "size": 0
+  },
+  "build/filelog": {
+    "type": "dir",
+    "mtime": 0,
+    "size": 0
+  },
+  "build/filelog/Analysis-00.toc": {
+    "type": "file",
+    "mtime": 1784016296.4335544,
+    "size": 106093
+  },
+  "build/filelog/base_library.zip": {
+    "type": "file",
+    "mtime": 1784016295.5078683,
+    "size": 1329520
+  },
+  "build/filelog/EXE-00.toc": {
+    "type": "file",
+    "mtime": 1784016300.4935713,
+    "size": 100075
+  },
+  "build/filelog/filelog.pkg": {
+    "type": "file",
+    "mtime": 1784016299.150773,
+    "size": 10701229
+  },
+  "build/filelog/PKG-00.toc": {
+    "type": "file",
+    "mtime": 1784016299.1620357,
+    "size": 98465
+  },
+  "build/filelog/PYZ-00.pyz": {
+    "type": "file",
+    "mtime": 1784016296.7255635,
+    "size": 1374832
+  },
+  "build/filelog/PYZ-00.toc": {
+    "type": "file",
+    "mtime": 1784016296.7265632,
+    "size": 8284
+  },
+  "build/filelog/Tree-00.toc": {
+    "type": "file",
+    "mtime": 1784016295.756257,
+    "size": 82958
+  },
+  "build/filelog/Tree-01.toc": {
+    "type": "file",
+    "mtime": 1784016295.7582603,
+    "size": 7149
+  },
+  "build/filelog/Tree-02.toc": {
+    "type": "file",
+    "mtime": 1784016295.7592597,
+    "size": 638
+  },
+  "build/filelog/warn-filelog.txt": {
+    "type": "file",
+    "mtime": 1784016296.4062939,
+    "size": 1752
+  },
+  "build/filelog/xref-filelog.html": {
+    "type": "file",
+    "mtime": 1784016296.422333,
+    "size": 244926
+  },
+  "build/filelog/localpycs": {
+    "type": "dir",
+    "mtime": 0,
+    "size": 0
+  },
+  "build/filelog/localpycs/pyimod01_archive.pyc": {
+    "type": "file",
+    "mtime": 1784015809.180374,
+    "size": 5648
+  },
+  "build/filelog/localpycs/pyimod02_importers.pyc": {
+    "type": "file",
+    "mtime": 1784015809.1862578,
+    "size": 24359
+  },
+  "build/filelog/localpycs/pyimod03_ctypes.pyc": {
+    "type": "file",
+    "mtime": 1784015809.188934,
+    "size": 6170
+  },
+  "build/filelog/localpycs/pyimod04_pywin32.pyc": {
+    "type": "file",
+    "mtime": 1784015809.191933,
+    "size": 1643
+  },
+  "build/filelog/localpycs/struct.pyc": {
+    "type": "file",
+    "mtime": 1784015809.1763735,
+    "size": 305
+  },
+  "dist/filelog.exe": {
+    "type": "file",
+    "mtime": 1784016300.4815874,
+    "size": 11022765
+  }
+}

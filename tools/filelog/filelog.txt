@@ -1,0 +1,56 @@
+首次记录 - 文件夹: D:\LOG\python\tools\filelog
+时间: 2026-07-14 15:54:57
+脚本第一版 记录
+------------------------------------------------------------
+[2026-07-14 15:58:17] 文件夹: D:\LOG\python\tools\filelog
+  新增:
+    filelog.exe
+    filelog.spec
+    build
+    dist
+    build/filelog
+    build/filelog/Analysis-00.toc
+    build/filelog/base_library.zip
+    build/filelog/EXE-00.toc
+    build/filelog/filelog.pkg
+    build/filelog/PKG-00.toc
+    build/filelog/PYZ-00.pyz
+    build/filelog/PYZ-00.toc
+    build/filelog/warn-filelog.txt
+    build/filelog/xref-filelog.html
+    build/filelog/localpycs
+    build/filelog/localpycs/pyimod01_archive.pyc
+    build/filelog/localpycs/pyimod02_importers.pyc
+    build/filelog/localpycs/pyimod03_ctypes.pyc
+    build/filelog/localpycs/pyimod04_pywin32.pyc
+    build/filelog/localpycs/struct.pyc
+    dist/filelog.exe
+  修改:
+    filelog.py
+  备注: 打包exe运行错误，因为无输入备注ui
+------------------------------------------------------------
+[2026-07-14 16:04:34] 文件夹: D:\LOG\python\tools\filelog
+  修改:
+    filelog.py
+  备注: 增加了弹窗输入备注
+------------------------------------------------------------
+[2026-07-14 16:05:26] 文件夹: D:\LOG\python\tools\filelog
+  新增:
+    build/filelog/Tree-00.toc
+    build/filelog/Tree-01.toc
+    build/filelog/Tree-02.toc
+  修改:
+    build/filelog/EXE-00.toc
+    build/filelog/PKG-00.toc
+    dist/filelog.exe
+    build/filelog/base_library.zip
+    build/filelog/xref-filelog.html
+    build/filelog/PYZ-00.toc
+    filelog.exe
+    build/filelog/Analysis-00.toc
+    build/filelog/warn-filelog.txt
+    build/filelog/filelog.pkg
+    filelog.spec
+    build/filelog/PYZ-00.pyz
+  备注: 重新打包exe
+------------------------------------------------------------

@@ -38,6 +38,61 @@ WTS_SESSION_UNLOCK = 0x8
 HEARTBEAT_INTERVAL = 10  # 心跳间隔（秒）
 SHUTDOWN_THRESHOLD = 300  # 关机检测阈值（秒，5分钟）
 
+# "离开一下"配置
+MANUAL_AWAY_GRACE_SECONDS = 5  # 点击后多少秒内不检测键鼠输入，避免点菜单的动作本身被误判为"回来"
+
+# -----------------------------
+# 手动"离开一下"状态
+# -----------------------------
+class LASTINPUTINFO(ctypes.Structure):
+    _fields_ = [("cbSize", ctypes.c_uint), ("dwTime", ctypes.c_uint)]
+
+def get_last_input_tick():
+    """返回系统最后一次键鼠输入的 tick 值（越大表示越晚发生输入）"""
+    lii = LASTINPUTINFO()
+    lii.cbSize = ctypes.sizeof(LASTINPUTINFO)
+    ctypes.windll.user32.GetLastInputInfo(ctypes.byref(lii))
+    return lii.dwTime
+
+manually_away = False          # 是否处于"离开一下"手动状态
+_away_trigger_tick = None      # 触发"离开一下"那一刻的最后输入 tick
+_away_trigger_time = None      # 触发"离开一下"的本地时间（用于宽限期判断）
+_manual_state_lock = threading.Lock()
+
+def mark_away_manual():
+    """托盘菜单点击：进入离开状态，之后检测到任意键鼠动作会自动结束"""
+    global manually_away, _away_trigger_tick, _away_trigger_time
+    with _manual_state_lock:
+        if manually_away:
+            return  # 已经处于离开状态，忽略重复点击
+        manually_away = True
+        _away_trigger_tick = get_last_input_tick()
+        _away_trigger_time = time.monotonic()
+    log_event('manual_away')
+
+def manual_away_watcher():
+    """后台线程：一旦检测到点击"离开一下"之后有新的键鼠输入，自动标记回来
+    点击后 MANUAL_AWAY_GRACE_SECONDS 秒内不做检测，避免点菜单本身的鼠标移动/点击被误判为"回来"
+    """
+    global manually_away, _away_trigger_tick, _away_trigger_time
+    while True:
+        with _manual_state_lock:
+            active = manually_away
+            trigger_tick = _away_trigger_tick
+            trigger_time = _away_trigger_time
+        if active:
+            in_grace_period = (time.monotonic() - trigger_time) < MANUAL_AWAY_GRACE_SECONDS
+            if not in_grace_period:
+                current_tick = get_last_input_tick()
+                # dwTime 是自开机以来最后一次输入的时间点，只要比触发时更新，说明有新动作
+                if current_tick != trigger_tick:
+                    with _manual_state_lock:
+                        manually_away = False
+                        _away_trigger_tick = None
+                        _away_trigger_time = None
+                    log_event('manual_back')
+        time.sleep(1)
+
 # -----------------------------
 # 工具函数
 # -----------------------------
@@ -208,8 +263,8 @@ DASHBOARD_HTML = """
     th { position: sticky; top: 0; background: #fff; z-index: 1; text-align: left; color: #718096; font-weight: 600; }
     th, td { padding: 12px; border-bottom: 1px solid #edf2f7; }
     .tag { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; }
-    .tag-boot, .tag-unlock { background: #e0e7ff; color: #4361ee; }
-    .tag-lock, .tag-shutdown { background: #f1f5f9; color: #64748b; }
+    .tag-boot, .tag-unlock, .tag-manual_back { background: #e0e7ff; color: #4361ee; }
+    .tag-lock, .tag-shutdown, .tag-manual_away { background: #f1f5f9; color: #64748b; }
   </style>
 </head>
 <body>
@@ -284,8 +339,8 @@ function load() {
             let duration = end - start;
             let type = events[i].type;
 
-            // 逻辑：只有 lock 状态到下一个状态之间算作"离开区块"
-            let isAway = (type === 'lock');
+            // 逻辑：lock 或 手动"离开一下"状态到下一个状态之间算作"离开区块"
+            let isAway = (type === 'lock' || type === 'manual_away');
             
             if (isAway) {
                 awayMs += duration;
@@ -465,6 +520,9 @@ if __name__ == '__main__':
     
     # 启动心跳线程
     threading.Thread(target=heartbeat_worker, daemon=True).start()
+
+    # 启动"离开一下"自动结束监测线程
+    threading.Thread(target=manual_away_watcher, daemon=True).start()
     
     # 启动Web服务
     threading.Thread(target=lambda: app.run(
@@ -480,6 +538,10 @@ if __name__ == '__main__':
         Image.new('RGB', (64, 64), (30, 144, 255)), 
         "工位统计", 
         menu=pystray.Menu(
+            pystray.MenuItem(
+                lambda item: "离开中（有动作自动返回）" if manually_away else "离开一下",
+                lambda icon, item: mark_away_manual()
+            ),
             pystray.MenuItem("打开面板", lambda: webbrowser.open(f"http://{FLASK_HOST}:{FLASK_PORT}")),
             pystray.MenuItem("退出", lambda i, n: os._exit(0))
         )

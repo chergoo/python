@@ -1,0 +1,7 @@
+requests
+jieba
+wordcloud
+pyecharts
+transformers
+torch
+snownlp

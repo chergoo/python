@@ -58,16 +58,47 @@ manually_away = False          # 是否处于"离开一下"手动状态
 _away_trigger_tick = None      # 触发"离开一下"那一刻的最后输入 tick
 _away_trigger_time = None      # 触发"离开一下"的本地时间（用于宽限期判断）
 _manual_state_lock = threading.Lock()
+tray_icon = None               # 托盘图标引用，用于动态更新图标颜色
+
+def _make_tray_image(size=64, color=(30, 144, 255)):
+    """生成托盘图标：纯色圆角方块"""
+    img = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(img)
+    margin = 4
+    radius = size // 6
+    draw.rounded_rectangle(
+        [margin, margin, size - margin, size - margin],
+        radius=radius, fill=color
+    )
+    return img
+
+def _update_tray_icon():
+    """根据当前离开状态更新托盘图标颜色和菜单文字"""
+    global tray_icon
+    if tray_icon is None:
+        return
+    if manually_away:
+        tray_icon.icon = _make_tray_image(color=(148, 163, 184))  # 灰色：离开中
+    else:
+        tray_icon.icon = _make_tray_image(color=(30, 144, 255))   # 蓝色：正常
+    tray_icon.update_menu()
 
 def mark_away_manual():
-    """托盘菜单点击：进入离开状态，之后检测到任意键鼠动作会自动结束"""
+    """托盘菜单点击：切换离开/回来状态。处于离开状态时也可手动返回。"""
     global manually_away, _away_trigger_tick, _away_trigger_time
     with _manual_state_lock:
         if manually_away:
-            return  # 已经处于离开状态，忽略重复点击
+            # 手动退出离开状态
+            manually_away = False
+            _away_trigger_tick = None
+            _away_trigger_time = None
+            _update_tray_icon()
+            log_event('manual_back')
+            return
         manually_away = True
         _away_trigger_tick = get_last_input_tick()
         _away_trigger_time = time.monotonic()
+    _update_tray_icon()
     log_event('manual_away')
 
 def manual_away_watcher():
@@ -90,6 +121,7 @@ def manual_away_watcher():
                         manually_away = False
                         _away_trigger_tick = None
                         _away_trigger_time = None
+                    _update_tray_icon()
                     log_event('manual_back')
         time.sleep(1)
 
@@ -533,19 +565,19 @@ if __name__ == '__main__':
     ), daemon=True).start()
     
     # 创建托盘图标
-    icon = pystray.Icon(
-        "Tracker", 
-        Image.new('RGB', (64, 64), (30, 144, 255)), 
-        "工位统计", 
+    tray_icon = pystray.Icon(
+        "Tracker",
+        _make_tray_image(),
+        "工位统计",
         menu=pystray.Menu(
             pystray.MenuItem(
-                lambda item: "离开中（有动作自动返回）" if manually_away else "离开一下",
+                lambda item: "离开中（点击返回）" if manually_away else "离开一下",
                 lambda icon, item: mark_away_manual()
             ),
             pystray.MenuItem("打开面板", lambda: webbrowser.open(f"http://{FLASK_HOST}:{FLASK_PORT}")),
             pystray.MenuItem("退出", lambda i, n: os._exit(0))
         )
     )
-    
+
     # 运行托盘程序
-    icon.run()
+    tray_icon.run()

@@ -697,7 +697,6 @@ class App(tk.Tk):
             self.lbl_current_value.configure(text=f"{latest:.3f}")
 
     def _update_chart(self):
-        """刷新 matplotlib 图表"""
         self.ax.cla()
         self.ax.set_ylabel("测量值")
         self.ax.set_xlabel("时间")
@@ -720,17 +719,15 @@ class App(tk.Tk):
                     color="blue",
                 )
 
-            # 自动调整 Y 轴范围，留一些 margin
-            y_min, y_max = min(vals), max(vals)
-            y_margin = max((y_max - y_min) * 0.2, 0.05)
-            self.ax.set_ylim(y_min - y_margin, y_max + y_margin)
+            # 自动调整轴范围（包括 x 和 y）
+            self.ax.relim()
+            self.ax.autoscale_view()
 
-            # X 轴时间格式化
+            # 设置 x 轴时间格式（定位器自动选择）
             self.ax.xaxis.set_major_formatter(
                 matplotlib.dates.DateFormatter("%H:%M:%S")
             )
-            self.ax.xaxis.set_major_locator(MaxNLocator(nbins=6))
-            self.fig.autofmt_xdate()
+            self.fig.autofmt_xdate()  # 旋转标签，防止重叠
 
         self.canvas.draw_idle()
 

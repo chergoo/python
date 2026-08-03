@@ -12,7 +12,6 @@ import threading
 import queue
 import re
 import os
-import time
 from datetime import datetime
 from dataclasses import dataclass, field
 from collections import deque
@@ -121,62 +120,6 @@ class SerialWorker(threading.Thread):
             except Exception:
                 pass
 
-
-# ═══════════════════════════════════════════════════════════════
-# 文件回放工作线程（用于无传感器时测试）
-# ═══════════════════════════════════════════════════════════════
-
-
-class FileReplayWorker(threading.Thread):
-    """从日志文件回放数据，模拟传感器输出"""
-
-    def __init__(self, filepath: str, rx_queue: queue.Queue, speed: float = 1.0):
-        super().__init__(daemon=True)
-        self.filepath = filepath
-        self.rx_queue = rx_queue
-        self.speed = speed  # 回放速度倍率
-        self._stop_event = threading.Event()
-        self.connected = False
-
-    def run(self):
-        try:
-            with open(self.filepath, "r", encoding="utf-8", errors="replace") as f:
-                lines = f.readlines()
-
-            self.connected = True
-            self.rx_queue.put(("__CONNECTED__", f"FILE:{self.filepath}"))
-
-            for raw_line in lines:
-                if self._stop_event.is_set():
-                    break
-
-                # 去除行首的时间戳前缀 [HH:MM:SS.mmm]
-                line = raw_line.strip()
-                if not line:
-                    continue
-                # 尝试去掉时间戳前缀
-                ts_match = re.match(r"^\[\d{2}:\d{2}:\d{2}\.\d{3}\]", line)
-                if ts_match:
-                    line = line[ts_match.end():]
-                # 去掉可能的前导乱码（非 ASCII 可打印字符）
-                line = re.sub(r"^[^\x20-\x7E\*一-鿿]+", "", line)
-                line = line.strip()
-                if line:
-                    self.rx_queue.put(("__DATA__", line))
-                    time.sleep(1.0 / self.speed)  # 模拟 1Hz 输出
-
-            self.rx_queue.put(("__EOF__", ""))
-            self.connected = False
-            self.rx_queue.put(("__DISCONNECTED__", f"FILE:{self.filepath}"))
-
-        except FileNotFoundError:
-            self.rx_queue.put(("__ERROR__", f"文件不存在: {self.filepath}"))
-            self.connected = False
-        except Exception as e:
-            self.rx_queue.put(("__ERROR__", str(e)))
-            self.connected = False
-
-
 # ═══════════════════════════════════════════════════════════════
 # 数据解析器
 # ═══════════════════════════════════════════════════════════════
@@ -186,7 +129,7 @@ class DataParser:
     """解析传感器输出行，区分上电信息和测量数据"""
 
     # 测量数据: +057.957,600,00 或 -001.030,600,00 或 001.030,600,00
-    RE_MEASUREMENT = re.compile(r"^([+-]?\d{3}\.\d{3}),(\d+),(\d+)$")
+    RE_MEASUREMENT = re.compile(r"^([+-]?\d+\.\d+),(\d+),(\d+)$")
 
     # EHT 校准系数: 400,+2.38899E-03,-1.50322E+00,02207
     RE_EHT = re.compile(
@@ -290,7 +233,7 @@ class App(tk.Tk):
         self.sensor_info = SensorInfo()
         self.parser = DataParser()
         self.rx_queue: queue.Queue = queue.Queue()
-        self.worker: "SerialWorker | FileReplayWorker | None" = None
+        self.worker: "SerialWorker | None" = None
 
         # 测量数据缓冲
         self.timestamps: deque = deque(maxlen=self.MAX_DATA_POINTS)
@@ -538,7 +481,7 @@ class App(tk.Tk):
         self.worker.start()
 
     def _start_file_replay(self):
-        """从文件回放数据"""
+        """从文件一次性加载全部数据并绘制完整图表"""
         filepath = filedialog.askopenfilename(
             title="选择数据日志文件",
             filetypes=[("Text files", "*.txt"), ("All files", "*.*")],
@@ -550,8 +493,55 @@ class App(tk.Tk):
         self._disconnect()
         self._clear_data()
 
-        self.worker = FileReplayWorker(filepath, self.rx_queue, speed=1.0)
-        self.worker.start()
+        try:
+            with open(filepath, "r", encoding="utf-8", errors="replace") as f:
+                lines = f.readlines()
+
+            for raw_line in lines:
+                line = raw_line.strip()
+                if not line:
+                    continue
+
+                # 提取并剥离时间戳 [YYYY-MM-DD HH:MM:SS.mmm] 或 [HH:MM:SS.mmm]
+                ts_match = re.match(
+                    r"^\[(\d{4}-\d{2}-\d{2}\s+)?(\d{2}:\d{2}:\d{2}\.\d{3})\]", line
+                )
+                replay_ts = None
+                if ts_match:
+                    ts_str = ts_match.group(0)[1:-1]
+                    try:
+                        replay_ts = datetime.strptime(ts_str, "%Y-%m-%d %H:%M:%S.%f")
+                    except ValueError:
+                        try:
+                            today = datetime.now().strftime("%Y-%m-%d")
+                            replay_ts = datetime.strptime(
+                                f"{today} {ts_str}", "%Y-%m-%d %H:%M:%S.%f"
+                            )
+                        except ValueError:
+                            pass
+                    line = line[ts_match.end():]
+
+                # 去除行首乱码字节
+                line = re.sub(r"^[^\x20-\x7E\*一-鿿]+", "", line)
+                line = line.strip()
+                if not line:
+                    continue
+
+                self._process_line(line, replay_ts, skip_ui=True)
+
+            # 一次性更新所有 UI
+            self._update_chart()
+            self._update_info_display()
+            self._update_eht_table()
+            self._update_mode_display()
+            self._update_status()
+            self.lbl_status.configure(
+                text=f"状态: 文件回放完成 ({os.path.basename(filepath)})"
+            )
+
+        except Exception as e:
+            messagebox.showerror("回放错误", str(e))
+            self.lbl_status.configure(text="状态: 回放失败")
 
     def _set_connected_state(self, connected: bool):
         """更新连接状态下的 UI"""
@@ -572,6 +562,7 @@ class App(tk.Tk):
         self.parser.reset()
         self._update_chart()
         self._update_info_display()
+        self._update_eht_table()
         self._update_mode_display()
         self._update_status()
 
@@ -590,7 +581,10 @@ class App(tk.Tk):
         try:
             while True:
                 msg = self.rx_queue.get_nowait()
-                self._handle_message(msg)
+                try:
+                    self._handle_message(msg)
+                except Exception as e:
+                    print(f"[POLL ERROR] 处理队列消息失败: {e}")
         except queue.Empty:
             pass
         finally:
@@ -618,14 +612,11 @@ class App(tk.Tk):
             self._set_connected_state(False)
             self.lbl_status.configure(text="状态: 错误")
 
-        elif msg_type == "__EOF__":
-            self.lbl_status.configure(text="状态: 文件回放结束")
-
         elif msg_type == "__SYSMSG__":
             # 系统消息（保留扩展）
             pass
 
-    def _process_line(self, line: str):
+    def _process_line(self, line: str, timestamp: datetime = None, skip_ui: bool = False):
         """处理一行原始数据"""
         # ── 写入原始日志 ──
         self._write_log(line)
@@ -639,22 +630,24 @@ class App(tk.Tk):
             mode = result["mode"]
             # status = result["status"]  # 暂不显示
 
-            now = datetime.now()
+            now = timestamp or datetime.now()
             self.timestamps.append(now)
             self.measurements.append(value)
             self.current_mode = mode
             self.data_count += 1
 
-            self._update_chart()
-            self._update_mode_display()
-            self._update_status()
+            if not skip_ui:
+                self._update_chart()
+                self._update_mode_display()
+                self._update_status()
 
         elif result["type"] == "eht":
             # 校准系数
             self.sensor_info.eht_coefficients.append(
                 (result["wavelength"], result["c1"], result["c2"], result["c3"])
             )
-            self._update_eht_table()
+            if not skip_ui:
+                self._update_eht_table()
 
         elif result["type"] == "info":
             key = result["key"]
@@ -665,7 +658,8 @@ class App(tk.Tk):
                 self.sensor_info.instrument_type = value
             elif key == "firmware_version":
                 self.sensor_info.firmware_version = value
-            self._update_info_display()
+            if not skip_ui:
+                self._update_info_display()
 
         # unknown 类型静默忽略
 
@@ -697,27 +691,24 @@ class App(tk.Tk):
             self.lbl_current_value.configure(text=f"{latest:.3f}")
 
     def _update_chart(self):
-        self.ax.cla()
-        self.ax.set_ylabel("测量值")
-        self.ax.set_xlabel("时间")
-        self.ax.grid(True, alpha=0.3)
-        self.ax.axhline(y=0, color="gray", linewidth=0.5, linestyle="--")
-
         if self.timestamps and self.measurements:
             ts = list(self.timestamps)
             vals = list(self.measurements)
-            self.ax.plot(ts, vals, "b-", linewidth=1.2)
+            self.line_measure.set_data(ts, vals)
+
+            # 清除旧标注
+            for ann in list(self.ax.texts):
+                ann.remove()
 
             # 标注最新值
-            if len(vals) > 0:
-                self.ax.annotate(
-                    f"{vals[-1]:.3f}",
-                    xy=(ts[-1], vals[-1]),
-                    xytext=(5, 5),
-                    textcoords="offset points",
-                    fontsize=8,
-                    color="blue",
-                )
+            self.ax.annotate(
+                f"{vals[-1]:.3f}",
+                xy=(ts[-1], vals[-1]),
+                xytext=(5, 5),
+                textcoords="offset points",
+                fontsize=8,
+                color="blue",
+            )
 
             # 自动调整轴范围（包括 x 和 y）
             self.ax.relim()
@@ -728,6 +719,10 @@ class App(tk.Tk):
                 matplotlib.dates.DateFormatter("%H:%M:%S")
             )
             self.fig.autofmt_xdate()  # 旋转标签，防止重叠
+        else:
+            self.line_measure.set_data([], [])
+            for ann in list(self.ax.texts):
+                ann.remove()
 
         self.canvas.draw_idle()
 
@@ -743,8 +738,9 @@ class App(tk.Tk):
     # ─────────────────────────────────────────────────────────
 
     def _open_log_file(self):
-        """创建新的日志文件"""
-        log_dir = os.path.join(os.path.expanduser("~"), "Desktop", "uvilux_data")
+        """创建新的日志文件（保存至桌面）"""
+        desktop = os.path.join(os.path.expanduser("~"), "Desktop")
+        log_dir = os.path.join(desktop, "UviLUX_logs")
         os.makedirs(log_dir, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

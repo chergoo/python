@@ -308,7 +308,7 @@ class App(tk.Tk):
         eht_frame.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         # 表头
-        cols = [("波长", 60), ("系数 A", 130), ("系数 B", 130), ("系数 C", 70)]
+        cols = [("EHT", 60), ("系数 A", 130), ("系数 B", 130), ("系数 C", 70)]
         self.eht_tree = ttk.Treeview(
             eht_frame, columns=[c[0] for c in cols], show="headings", height=5
         )
@@ -477,6 +477,10 @@ class App(tk.Tk):
         self._disconnect()  # 确保之前的连接已关闭
         self._clear_data()
 
+        # 恢复有界 deque（文件回放后可能被替换为无界）
+        self.timestamps = deque(maxlen=self.MAX_DATA_POINTS)
+        self.measurements = deque(maxlen=self.MAX_DATA_POINTS)
+
         self.worker = SerialWorker(port, baud or 115200, self.rx_queue)
         self.worker.start()
 
@@ -492,6 +496,10 @@ class App(tk.Tk):
 
         self._disconnect()
         self._clear_data()
+
+        # 文件回放时使用无界 deque，保留全部数据（实时模式限 300 条）
+        self.timestamps = deque()
+        self.measurements = deque()
 
         try:
             with open(filepath, "r", encoding="utf-8", errors="replace") as f:
@@ -714,7 +722,10 @@ class App(tk.Tk):
             self.ax.relim()
             self.ax.autoscale_view()
 
-            # 设置 x 轴时间格式（定位器自动选择）
+            # X 轴：自动选择时间刻度间隔 + 格式化
+            self.ax.xaxis.set_major_locator(
+                matplotlib.dates.AutoDateLocator()
+            )
             self.ax.xaxis.set_major_formatter(
                 matplotlib.dates.DateFormatter("%H:%M:%S")
             )

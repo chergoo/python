@@ -1,0 +1,220 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Microsoft YaHei", "Segoe UI", sans-serif;
+    font-size: 13px;
+    background: #f0f2f5;
+    color: #333;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ── 传感器信息面板 ── */
+.info-panel {
+    display: flex;
+    gap: 24px;
+    padding: 10px 16px;
+    background: #fff;
+    border-bottom: 2px solid #1a73e8;
+    flex-shrink: 0;
+}
+
+.info-item {
+    font-size: 14px;
+}
+
+.info-item strong {
+    color: #555;
+}
+
+.info-item span {
+    color: #1a73e8;
+    font-weight: 600;
+}
+
+/* ── 主体区域 ── */
+.main-area {
+    display: flex;
+    flex: 1;
+    gap: 8px;
+    padding: 8px;
+    min-height: 0;
+}
+
+/* ── 左侧面板 ── */
+.left-panel {
+    width: 360px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.section {
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a73e8;
+    margin-bottom: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* ── EHT 表格 ── */
+#eht-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+#eht-table th {
+    background: #e8f0fe;
+    padding: 4px 6px;
+    text-align: center;
+    font-weight: 600;
+    color: #444;
+    border: 1px solid #d0d0d0;
+}
+
+#eht-table td {
+    padding: 3px 6px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 11px;
+}
+
+/* ── 测量模式 ── */
+.mode-section {
+    flex: 1;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.mode-label {
+    font-size: 12px;
+    color: #888;
+}
+
+.mode-value {
+    font-size: 36px;
+    font-weight: 700;
+    color: #1a73e8;
+    font-family: "Consolas", monospace;
+}
+
+.cur-value {
+    font-size: 24px;
+    font-weight: 700;
+    color: #e65100;
+    font-family: "Consolas", monospace;
+}
+
+.mode-section hr {
+    margin: 10px 0;
+    border: none;
+    border-top: 1px solid #e0e0e0;
+}
+
+/* ── 图表面板 ── */
+.chart-panel {
+    flex: 1;
+    background: #fff;
+    border-radius: 6px;
+    padding: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+#chart-container {
+    flex: 1;
+    min-height: 0;
+}
+
+/* ── 控制栏 ── */
+.control-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    flex-shrink: 0;
+}
+
+.control-bar label {
+    font-size: 13px;
+    color: #555;
+}
+
+.control-bar select {
+    padding: 4px 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff;
+}
+
+.control-bar button {
+    padding: 5px 14px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.15s;
+}
+
+.control-bar button:hover {
+    background: #e8f0fe;
+    border-color: #1a73e8;
+}
+
+#btn-connect {
+    background: #1a73e8;
+    color: #fff;
+    border-color: #1a73e8;
+    font-weight: 600;
+}
+
+#btn-connect:hover {
+    background: #1557b0;
+}
+
+#btn-connect.connected {
+    background: #d93025;
+    border-color: #d93025;
+}
+
+/* ── 状态栏 ── */
+.status-bar {
+    display: flex;
+    gap: 16px;
+    padding: 4px 16px;
+    background: #fafafa;
+    border-top: 1px solid #e0e0e0;
+    font-size: 12px;
+    color: #666;
+    flex-shrink: 0;
+}
+
+.status-bar span span {
+    font-weight: 600;
+    color: #333;
+}

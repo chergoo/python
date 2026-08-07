@@ -1,0 +1,25 @@
+## Build results / 编译产物
+[Bb]in/
+[Ob]j/
+[L2]og/
+[Ll]ogs/
+
+## Visual Studio & User-specific files / 用户个性化配置与缓存
+.vs/
+*.csproj.user
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Packages / 依赖包缓存
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+## OS & Test output / 系统与测试输出
+Thumbs.db
+ehthumbs.db
+[Dd]esktop.ini
+*.log

@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.37516.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "UviLUX_CS", "UviLUX_CS.csproj", "{A6A6F938-317C-4D55-9FF0-D1422A7DF437}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A6A6F938-317C-4D55-9FF0-D1422A7DF437}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A6A6F938-317C-4D55-9FF0-D1422A7DF437}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A6A6F938-317C-4D55-9FF0-D1422A7DF437}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A6A6F938-317C-4D55-9FF0-D1422A7DF437}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EB489976-6211-44A5-B0A5-E5342E4D23E0}
+	EndGlobalSection
+EndGlobal
